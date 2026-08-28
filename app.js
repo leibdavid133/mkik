@@ -1229,7 +1229,7 @@ function init(){
   refreshSidebar();
   buildSamples();
   bindNav();
-  bindMic();
+  /* a bindMic() a bindNav()-ból fut; kétszer kötve két kattintás-kezelő ülne a gombon */
   bindChrome();
   reflectConfig();
   applyLang();
