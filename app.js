@@ -427,6 +427,14 @@ function tablaMezok(t){
   return out;
 }
 
+/* Csak az első betűt kisbetűsíti, és azt is csak akkor, ha a szó nem
+   csupa nagybetűs rövidítés vagy római szám. */
+function kisKezdo(t){
+  var elso = t.split(" ")[0];
+  if (/^[IVXLC]+\.?$/.test(elso) || elso === elso.toUpperCase()) return t;
+  return t.charAt(0).toLowerCase() + t.slice(1);
+}
+
 function valaszSzoveg(chunk, r){
   if (chunk.k === "table"){
     var mez = tablaMezok(chunk.t);
@@ -441,8 +449,10 @@ function valaszSzoveg(chunk, r){
     }
     var masodik = [];
     if (mez["jóváhagyó"])        masodik.push("a jóváhagyó " + mez["jóváhagyó"]);
-    if (mez["minimális eljárás"]) masodik.push("a minimális eljárás: " + mez["minimális eljárás"].toLowerCase());
-    if (mez["kötelező dokumentum"]) masodik.push("a kötelező dokumentum: " + mez["kötelező dokumentum"].toLowerCase());
+    /* Az értéket nem kisbetűsítjük: a római számok és a rövidítések
+       ("II. kategória", "Kbt.") így maradnak helyesek. */
+    if (mez["minimális eljárás"]) masodik.push("a minimális eljárás " + kisKezdo(mez["minimális eljárás"]));
+    if (mez["kötelező dokumentum"]) masodik.push("a kötelező dokumentum " + kisKezdo(mez["kötelező dokumentum"]));
     if (!reszek.length && !masodik.length){
       /* Kétoszlopos táblázat (pl. "Követelmény / Előírás"): az első oszlop a
          tárgy, a második a rendelkezés. */
