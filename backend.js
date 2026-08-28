@@ -11,7 +11,10 @@
 var BACKEND = {
   url:     "https://yrddksgtictcpkqnguko.supabase.co/functions/v1",
   timeout: 2500,
-  on:      true
+  /* Alapból KI: adatvédelmi témájú belső rendszernél igaz állítás kell arról,
+     hogy alapértelmezés szerint semmi nem hagyja el a gépet. Az adminban egy
+     kattintással bekapcsolható, ha a többgépes közös napló kell. */
+  on:      false
 };
 
 var BACKEND_KEY = "mkik_backend_v1";

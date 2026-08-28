@@ -383,8 +383,10 @@ function councilAdjust(query, r, c){
    a helyes választ rajzolja ki, az app.js-hez nem kell hozzányúlni. */
 
 var _c_search = search;
-search = function(query){
-  var r = _c_search(query);
+/* A második paramétert (találatszám) tovább kell adni: a Megkeresések hídja
+   ezzel kér több találatot a dokumentum-szintű rangsoroláshoz. */
+search = function(query, topN){
+  var r = _c_search(query, topN);
   if (!COUNCIL.on || !r) return r;
 
   try {
@@ -392,6 +394,14 @@ search = function(query){
     var adj = councilAdjust(query, r, c);
     r._council = c;
     r._adj = adj;
+
+    /* A tanács a teljes dokumentumkészletből dolgozik, ezért itt kell
+       ellenőrizni: tiltott kamarából vagy zárt körből származó szakaszt nem
+       emelhet előre, különben megkerülné a jogosultságkezelést. */
+    if (adj.chunk && typeof chunkEngedelyezett === "function" && !chunkEngedelyezett(adj.chunk)){
+      adj.chunk = null;
+      if (adj.verdict === "strong" || adj.verdict === "weak") adj.verdict = _c_verdictOf(r);
+    }
 
     if (adj.chunk){
       var first = r.hits.length ? r.hits[0].e.c : null;

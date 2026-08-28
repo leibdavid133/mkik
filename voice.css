@@ -1,0 +1,22 @@
+/* ============================================================================
+   voice.css — a hangdiktálás stílusa (forrás: PR #1, buildwiseautomation).
+
+   Külön fájlban, hogy a style.css-hez ne kelljen hozzányúlni. Kizárólag a
+   meglévő MKIK-tokeneket használja (--mkik-green, --mkik-red, --line,
+   --surface, --ink-soft), így a gomb a kamarai arculatban marad, és a sötét
+   témát is automatikusan követi.
+   ============================================================================ */
+
+.mic-btn{display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px;
+  margin-right:8px; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft);
+  border-radius:2px; font-size:1rem; flex-shrink:0}
+.mic-btn:hover{border-color:var(--mkik-green); color:var(--mkik-green)}
+.mic-btn.recording{border-color:var(--mkik-red); color:var(--mkik-red); background:rgba(198,63,63,.08)}
+.mic-btn[disabled]{opacity:.45; cursor:not-allowed}
+.micStatus{margin-top:9px; font-size:.8rem; color:var(--mkik-red)}
+
+/* Mobilon a kérdező sáv egymás alá tördel (style.css, 560 px), a mikrofon
+   ott teljes szélességű gomb lesz, mint a Keresés. */
+@media (max-width:560px){
+  .mic-btn{width:100%; margin:9px 0 0}
+}

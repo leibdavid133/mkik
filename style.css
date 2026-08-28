@@ -381,3 +381,9 @@ footer li a{color:#fff; font-family:var(--cond); font-size:.84rem}
 .relbtn{border:1px solid var(--line); background:var(--bg-soft-2); border-radius:2px;
   padding:5px 10px; font-size:.75rem; color:var(--ink-soft)}
 .relbtn:hover{border-color:var(--mkik-green); color:var(--mkik-green)}
+
+/* ---------------------------------------------------------------- költség-alszakaszok */
+.calcsep{font-family:var(--cond); font-size:.72rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.6px; color:var(--ink-faint); margin:16px 0 4px; padding-top:12px;
+  border-top:1px solid var(--line)}
+.subhead{font-family:var(--slab); font-size:1.06rem; color:var(--mkik-green); margin:26px 0 12px}

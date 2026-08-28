@@ -170,8 +170,15 @@
      választunk a találatok összesített pontszáma alapján, és csak azon belül
      keressük a legjobb szakaszt. */
   function valaszoloSzakasz(szoveg) {
-    var r = search(szoveg, 60);
+    var r = search(szoveg);
     if (!r.hits.length) return null;
+
+    /* Ha a visszakereső tanács aktív, ő már elvégezte a dokumentumválasztást
+       (méréssel igazoltan jobban), ezért az ő sorrendjét fogadjuk el. */
+    if (r._adj || (typeof COUNCIL !== "undefined" && COUNCIL.on)) {
+      return { chunk: r.hits[0].e.c, pont: r.best, dokPont: r.best, dokTalalat: 3, r: r,
+               tanacsVerdict: verdictOf(r) };
+    }
 
     /* Az összeg a nagyobb dokumentumot részesítené előnyben, ezért a
        legjobb szakasz pontszáma dönt, a következő kettő csak kiegészít. */
@@ -233,7 +240,8 @@
     var fo = valaszoloSzakasz(szoveg);
     /* Elfogadjuk, ha a nyertes dokumentum érdemi tömeggel jött be: legalább
        három találat és értelmes összpontszám. Különben nincs fedezet. */
-    var elfogad = !!(fo && fo.pont >= 7 && fo.dokTalalat >= 2);
+    var elfogad = fo ? (fo.tanacsVerdict ? fo.tanacsVerdict !== "none"
+                                          : (fo.pont >= 7 && fo.dokTalalat >= 2)) : false;
     var felismeres;
     if (!elfogad) {
       felismeres = {

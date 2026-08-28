@@ -101,6 +101,7 @@
       <a href="#" data-view="chambers">Kamarák</a>
       <a href="#" data-view="users">Felhasználók</a>
       <a href="#" data-view="audit">Napló</a>
+      <a href="#" data-view="forrasok">Adatforrások</a>
       <a href="#" data-view="settings">Beállítások</a>
     </div>
   </div>
@@ -160,6 +161,40 @@
         <button class="btn btn-ghost" id="aClear"><i class="fa-regular fa-trash-can"></i> Napló ürítése</button>
       </div>
       <div class="tablewrap" id="aAudit"></div>
+    </section>
+
+    <section class="view" id="v-forrasok">
+      <div class="ahead"><div><h2>Adatforrások</h2>
+        <p>A dokumentumok ma kézi feltöltéssel kerülnek be. A cél a meglévő belső rendszerekből való átvétel — az alábbi táblázat megmutatja, hol csatlakozik be mindegyik, és nagyságrendileg mekkora munka.</p></div></div>
+      <div class="tablewrap">
+        <table><thead><tr><th>Forrás</th><th>Állapot</th><th>Csatlakozási pont</th><th>Mit hoz be</th><th>Ráfordítás</th></tr></thead><tbody>
+          <tr><td><b>Megosztott meghajtó</b><span class="sub2">SMB / hálózati mappa</span></td>
+              <td><span class="tag t-no">nincs bekötve</span></td>
+              <td><code>DATA_SOURCE</code></td>
+              <td>mappafigyelés, új és módosult fájlok ütemezett indexelése</td>
+              <td>~1 fejlesztőnap</td></tr>
+          <tr><td><b>Intranet</b><span class="sub2">SharePoint / belső portál</span></td>
+              <td><span class="tag t-no">nincs bekötve</span></td>
+              <td><code>DATA_SOURCE</code> + Graph API</td>
+              <td>dokumentumtárak, verziótörténet, jogosultsági körök átvétele</td>
+              <td>~2–3 fejlesztőnap</td></tr>
+          <tr><td><b>Iktató</b><span class="sub2">iratkezelő rendszer</span></td>
+              <td><span class="tag t-no">nincs bekötve</span></td>
+              <td><code>DATA_SOURCE</code> + iktatószám-leképezés</td>
+              <td>hatályos szabályzatok, körlevelek, vezetői utasítások</td>
+              <td>~3–5 fejlesztőnap, a rendszer API-jától függően</td></tr>
+          <tr><td><b>E-mail / postafiók</b><span class="sub2">közös ügyintézői fiók</span></td>
+              <td><span class="tag t-no">nincs bekötve</span></td>
+              <td><code>VOICE_ENDPOINT</code> mintájára új végpont</td>
+              <td>beérkező megkeresések automatikus betöltése a Megkeresések modulba</td>
+              <td>~1–2 fejlesztőnap</td></tr>
+        </tbody></table>
+      </div>
+      <div class="note"><b>A napi munkafolyamatba ágyazás nem terv, hanem meglévő képesség.</b>
+        A Megkeresések modul önálló, függőség nélküli fájl: két sor HTML-lel beilleszthető az intranetbe,
+        az iktatóba vagy bármelyik belső felületbe — nem kell külön felületet megnyitni hozzá.
+        A szerződést az <code>INTEGRACIO.md</code> rögzíti, a modul a saját feldolgozó-függvényét várja,
+        és ha nincs, demó módban is működik.</div>
     </section>
 
     <section class="view" id="v-settings">

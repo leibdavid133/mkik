@@ -222,6 +222,22 @@ function synonymsFor(q){
   return null;
 }
 
+/* A kamara- és jogosultsági szabály egy helyen. Minden réteg ezt hívja - a
+   visszakereső tanács is -, különben egy rangsor-módosítás megkerülhetné a
+   jogosultságot, és olyan szakaszt emelne előre, amit a felhasználó nem láthat. */
+function dokAllapot(docId){
+  var d = IDX.byDoc[docId];
+  if (!d) return "chamber";
+  var me = currentUser() || { circles: ["all"] };
+  if (d.chamber !== currentChamber()) return "chamber";
+  if (d.access && d.access !== "all" && me.circles.indexOf(d.access) < 0) return "circle";
+  return null;
+}
+
+function chunkEngedelyezett(chunk){
+  return !!chunk && dokAllapot(chunk.d) === null;
+}
+
 function search(query, topN){
   var qt = tokens(query);
   var uniq = [], seen = {};
@@ -283,15 +299,9 @@ function search(query, topN){
 
   /* Előszűrés: csak a kiválasztott kamara anyagából és csak abból, amihez
      a belépett munkatársnak hozzáférési köre van. */
-  var me = currentUser() || { circles: ["all"] };
-  var chIdx = currentChamber();
   var docState = {};
   for (var dk in IDX.byDoc){
-    if (!IDX.byDoc.hasOwnProperty(dk)) continue;
-    var dd = IDX.byDoc[dk];
-    if (dd.chamber !== chIdx) docState[dk] = "chamber";
-    else if (dd.access && dd.access !== "all" && me.circles.indexOf(dd.access) < 0) docState[dk] = "circle";
-    else docState[dk] = null;
+    if (IDX.byDoc.hasOwnProperty(dk)) docState[dk] = dokAllapot(dk);
   }
 
   var k1 = 1.4, b = 0.72, scored = [], blockedBest = 0, blockedDoc = null;
@@ -803,6 +813,23 @@ function calcMonthly(){
   document.getElementById("oLlm").textContent = forint(llmCost);
   document.getElementById("oTotal").textContent = forint(infra + llmCost);
   document.getElementById("oPer").textContent = q ? ((infra + llmCost) / q).toFixed(1) + " Ft" : "-";
+
+  /* Betöltés és frissítés: a gépidő elhanyagolható, a valódi költség az
+     ellenőrzés. Dokumentumonként negyed óra átnézéssel számolunk. */
+  var docs = parseInt(document.getElementById("mDocs").value, 10) || 0;
+  var sec = parseFloat(document.getElementById("mSec").value) || 0;
+  var valt = parseFloat(document.getElementById("mChange").value) || 0;
+  var ora = parseInt(document.getElementById("mHour").value, 10) || 0;
+  var ELLENORZES_ORA = 0.25;
+
+  var betoltPerc = Math.round(docs * sec / 60);
+  var betoltFt = Math.round(docs * ELLENORZES_ORA * ora);
+  document.getElementById("oLoad").textContent =
+    forint(betoltFt) + " (" + betoltPerc + " perc gépidő + " + (docs * ELLENORZES_ORA) + " óra ellenőrzés)";
+
+  var valtDb = Math.max(1, Math.round(docs * valt / 100));
+  document.getElementById("oRefresh").textContent =
+    forint(Math.round(valtDb * ELLENORZES_ORA * ora)) + " (" + valtDb + " dokumentum / hó)";
 }
 
 /* ---------------------------------------------------------------- felület */

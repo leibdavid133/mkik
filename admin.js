@@ -330,6 +330,7 @@ function showView(name){
   if (name === "chambers") renderChambers();
   if (name === "users")    renderUsers();
   if (name === "audit")    renderAudit();
+  /* az Adatforrások nézet statikus, nincs mit renderelni */
   window.scrollTo(0, 0);
 }
 
