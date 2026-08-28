@@ -35,7 +35,6 @@ var QTY_RX = /\b(mennyi|mennyit|mennyire|h[áa]ny|h[áa]nyszor|meddig|mekkora|mi
 var NUM_RX = /\d|\b(egy|k[ée]t|kett[őo]|h[áa]rom|n[ée]gy|[öo]t|hat|h[ée]t|nyolc|kilenc|t[íi]z|tizen|h[úu]sz|harminc|negyven|[öo]tven)\b/i;
 
 var VIEW_TITLES = {
-  megkeresesek: ["Megkeresések",   "megkeresések"],
   ask:     ["Kamarai Tudástár", "kamarai tudástár"],
   docs:    ["Dokumentumok",     "dokumentumok"],
   gaps:    ["Hiánylista",       "hiánylista"],
@@ -46,16 +45,15 @@ var VIEW_TITLES = {
 
 var PELDAK = [
   "Ki hagyhat jóvá egy 8 millió forintos beszerzést?",
-  "Hány ajánlatot kell bekérni 3 millió forintnál?",
   "Meddig kell megőrizni a beszerzési dossziét?",
-  "Elfogadhatok-e ajándékot egy szállítótól?",
-  "Mikor mellőzhető az ajánlatkérés?",
-  "Ki adhat teljesítésigazolást?"
+  "Milyen hosszú legyen a jelszó?",
+  "Használhatok saját laptopot munkára?",
+  "Hogyan kell iktatni egy beérkező levelet?"
 ];
 
 /* Szándékosan fedezet nélküli kérdés: a kiírás szerint az „erre nincs fedezet”
    mondat többet ér a zsűri szemében, mint tíz sikeres válasz. */
-var PELDA_NINCS = "Hány nap szabadság jár a munkatársaknak?";
+var PELDA_NINCS = "Mikor van a karácsonyi ünnepség?";
 
 /* ---------------------------------------------------------------- nyelvi rész */
 var STOP = ("a az egy és s de vagy hogy nem is meg mint már csak ha kell lehet " +
@@ -104,7 +102,15 @@ function prefixMatch(a, b){
    előtagja a másiknak. Ezeket gyengébb súllyal vesszük figyelembe, hogy a
    valódi találat meglegyen, de a véletlen egybeesés ("szabadság" / "szabadalom")
    ne tudjon önmagában választ kiváltani. */
-var LOOSE_MIN = 5, LOOSE_W = 0.45;
+var LOOSE_MIN = 5, LOOSE_W = 0.45, LOOSE_ARANY = 0.6;
+
+/* A közös előtag önmagában kevés: a "szabadság" és a "szabályzat" is öt betűn
+   egyezik, pedig semmi közük egymáshoz. Ezért a közös résznek a rövidebb szó
+   legalább 60%-át le kell fednie - így a "hosszú"/"hossza" (83%) és az
+   "igazolja"/"igazolás" (75%) átmegy, a "szabadság"/"szabályzat" (56%) nem. */
+function lazaIlleszkedes(a, b){
+  return commonPrefix(a, b) >= LOOSE_MIN;
+}
 
 /* Köznyelv -> a szabályzatok hivatalos szóhasználata. A kérdés szavait
    kiterjeszti, gyengébb súllyal: a pontos egyezés marad a legerősebb.
@@ -261,12 +267,12 @@ function search(query, topN){
       var term = IDX.vocab[v], strong = false, weak = false;
       for (var f = 0; f < forms.length; f++){
         if (prefixMatch(forms[f], term)){ strong = true; break; }
-        if (commonPrefix(forms[f], term) >= LOOSE_MIN) weak = true;
+        if (lazaIlleszkedes(forms[f], term)) weak = true;
       }
       if (strong){ cands.push(term); continue; }
       if (weak){ loose.push(term); continue; }
       for (var y = 0; y < syns.length; y++){
-        if (prefixMatch(syns[y], term) || commonPrefix(syns[y], term) >= LOOSE_MIN){ syn.push(term); break; }
+        if (prefixMatch(syns[y], term) || lazaIlleszkedes(syns[y], term)){ syn.push(term); break; }
       }
     }
     groups.push({ q: q, cands: cands, loose: loose, syn: syn });
@@ -358,7 +364,6 @@ function search(query, topN){
   }
   var coverage = covDen ? covNum / covDen : 0;
   var plainCov = groups.length ? plainHit / groups.length : 0;
-  if (amounts.length && top.length && top[0].e.c.r){ coverage = 1; plainCov = 1; }
 
   return { hits: top, terms: uniq, coverage: coverage, plainCov: plainCov,
            amounts: amounts, best: top.length ? top[0].score : 0,
@@ -478,6 +483,11 @@ function renderAnswer(query, r){
 
   if (verdict === "none"){
     logEvent(query, "nocov", null);
+    if (typeof backendFollowup === "function"){
+      var u1 = currentUser() || {};
+      backendFollowup({ query: query,
+        user: { name: u1.name, role: u1.role, email: u1.email } });
+    }
     box.innerHTML =
       '<div class="ansbox">' +
         '<div class="verdict no"><span class="dot"></span>Erre nincs fedezet a dokumentumokban</div>' +
@@ -513,8 +523,12 @@ function renderAnswer(query, r){
   /* 1) megfogalmazott válasz, 2) alatta EGY szó szerinti idézet a forrással,
      3) végül a további kapcsolódó szakaszok, tömören. */
   var c0 = top[0].e.c, d0x = docOf(c0.d);
+  var valaszTeljes = valaszSzoveg(c0, r) + " Ez a(z) " + d0x.title + " " +
+    (c0.s ? c0.s : (c0.p + ". oldal")) + " rendelkezésén alapul" +
+    (verdict === "weak" ? ", az illeszkedés viszont gyenge, ezért érdemes a forrást elolvasni." : ".");
+
   html +=
-    '<div class="answer">' + esc(valaszSzoveg(c0, r)) + '</div>' +
+    '<div class="answer">' + esc(valaszTeljes) + '</div>' +
     '<div class="answermeta">' +
       '<i class="fa-regular fa-file-lines"></i> ' + esc(d0x.title) +
       (c0.s ? ' · ' + esc(c0.s) : "") + ' · ' + c0.p + '. oldal' +
@@ -550,6 +564,18 @@ function renderAnswer(query, r){
     '</div>';
 
   box.innerHTML = html;
+
+  /* Összefoglaló e-mail a beszélgetésről (a backend kikapcsolva némán kihagyja). */
+  if (typeof backendNotifyAnswer === "function"){
+    var u2 = currentUser() || {};
+    backendNotifyAnswer({
+      query: query, answer: valaszTeljes, verdict: verdict,
+      user: { name: u2.name, role: u2.role, email: u2.email,
+              chamber: CHAMBERS[currentChamber()].short },
+      source: { doc: d0x.title, section: c0.s, page: c0.p, version: d0x.version,
+                effective: d0x.effective, quote: c0.t }
+    });
+  }
 
   var btns = box.querySelectorAll(".srcbtn, .relbtn");
   for (var b = 0; b < btns.length; b++){
@@ -929,6 +955,56 @@ function buildSamples(){
   }
 }
 
+/* ---------------------------------------------------------------- diktálás
+   A böngésző saját beszédfelismerőjével, magyar nyelvre állítva. Nem megy
+   külső szolgáltatáshoz külön kulcs nélkül, és ha a böngésző nem tudja,
+   a gomb egyszerűen eltűnik. */
+var felismero = null, diktalFut = false;
+
+function bindMic(){
+  var gomb = document.getElementById("micBtn");
+  var Felismero = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!gomb) return;
+  if (!Felismero){ gomb.style.display = "none"; return; }
+
+  gomb.addEventListener("click", function(){
+    if (diktalFut){ if (felismero) felismero.stop(); return; }
+    felismero = new Felismero();
+    felismero.lang = "hu-HU";
+    felismero.interimResults = true;
+    felismero.maxAlternatives = 1;
+
+    felismero.onstart = function(){
+      diktalFut = true;
+      gomb.classList.add("on");
+      gomb.setAttribute("title", "Felvétel — kattints a leállításhoz");
+      toast("Hallgatlak — mondd a kérdést.");
+    };
+    felismero.onresult = function(ev){
+      var szoveg = "", vegleges = false;
+      for (var i = 0; i < ev.results.length; i++){
+        szoveg += ev.results[i][0].transcript;
+        if (ev.results[i].isFinal) vegleges = true;
+      }
+      document.getElementById("q").value = szoveg;
+      if (vegleges){ felismero.stop(); window.setTimeout(ask, 250); }
+    };
+    var vissza = function(){
+      diktalFut = false;
+      gomb.classList.remove("on");
+      gomb.setAttribute("title", "Kérdés diktálása");
+    };
+    felismero.onerror = function(e){
+      vissza();
+      toast(e && e.error === "not-allowed"
+        ? "A mikrofon használatát a böngészőben engedélyezni kell."
+        : "A diktálás nem indult el, írd be a kérdést.");
+    };
+    felismero.onend = vissza;
+    try { felismero.start(); } catch (e) { vissza(); }
+  });
+}
+
 function ask(){
   var q = document.getElementById("q").value.trim();
   if (!q) return;
@@ -1196,6 +1272,7 @@ function init(){
   refreshSidebar();
   buildSamples();
   bindNav();
+  bindMic();
   bindChrome();
   reflectConfig();
   applyLang();

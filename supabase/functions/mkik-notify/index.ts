@@ -104,6 +104,79 @@ async function logMail(kind: string, to: string, intended: string | null, subjec
 
 /* ---------------------------------------------------------------- hiány-jelzés */
 
+/* ---------------------------------------------------------------- beszélgetés
+   Minden megválaszolt kérdésről megy egy levél: a kérdés, a rendszer válasza,
+   és a hivatkozott dokumentum a szó szerinti részlettel. Így a beszélgetés
+   e-mailben is visszakereshető, nem csak a naplóban. */
+async function handleAnswer(body: Record<string, any>) {
+  const query = String(body.query || "").trim();
+  if (!query)             return json({ error: "hiányzó kérdés" }, 400);
+  if (query.length > 500) return json({ error: "túl hosszú kérdés" }, 400);
+
+  const user   = body.user || {};
+  const src    = body.source || {};
+  const valasz = String(body.answer || "").slice(0, 1500);
+  const idezet = String(src.quote || "").slice(0, 1500);
+  const gyenge = body.verdict === "weak";
+
+  const hourAgo = new Date(Date.now() - 3600_000).toISOString();
+  const cnt = await db(`mkik_notifications?select=id&kind=eq.answer&sent_at=gte.${hourAgo}`);
+  if (cnt.ok) {
+    const rows = await cnt.json();
+    if (Array.isArray(rows) && rows.length >= MAX_PER_HOUR)
+      return json({ ok: true, skipped: "óradarab-korlát" });
+  }
+
+  const inner = `
+    <p style="margin:0 0 14px"><b>${esc(user.name || "ismeretlen munkatárs")}</b>
+       (${esc(user.role || "-")}) kérdést tett fel a Kamarai Tudástárban.</p>
+    <table width="100%" cellpadding="0" cellspacing="0">
+      ${kv("Kérdés", query)}
+      ${kv("Kamara", user.chamber || "-")}
+      ${kv("Megbízhatóság", gyenge ? "gyenge illeszkedés - ellenőrzendő" : "fedezet a szabályzatban")}
+    </table>
+    <p style="margin:18px 0 6px;font-size:12px;color:#6B6B6B;text-transform:uppercase;letter-spacing:.08em"><b>A rendszer válasza</b></p>
+    <p style="margin:0 0 16px;padding:12px 14px;background:#F0F3F4;border-left:3px solid #5DB47C">${esc(valasz)}</p>
+    <p style="margin:0 0 6px;font-size:12px;color:#6B6B6B;text-transform:uppercase;letter-spacing:.08em"><b>Hivatkozott dokumentum</b></p>
+    <table width="100%" cellpadding="0" cellspacing="0">
+      ${kv("Dokumentum", src.doc || "-")}
+      ${kv("Szakasz", src.section || "-")}
+      ${kv("Oldal", src.page ? String(src.page) + ". oldal" : "-")}
+      ${kv("Verzió", src.version ? "v" + src.version + " - hatályos " + (src.effective || "-") : "-")}
+    </table>
+    ${idezet ? `<p style="margin:14px 0 0;padding:12px 14px;background:#fff;border:1px solid #E0DDD6;border-left:3px solid #B8873B;font-size:13px">
+      <i>Szó szerint a szabályzatból:</i><br>${esc(idezet)}</p>` : ""}`;
+
+  return await sendMail("answer", `Kérdés megválaszolva: "${query.slice(0, 80)}"`,
+                        shell("Kamarai Tudástár", "Beszélgetés összefoglalója", inner), null, null);
+}
+
+/* ---------------------------------------------------------------- visszajelzés
+   Ha nincs fedezet, a kérdező kap egy visszajelzést, hogy nem maradt
+   válasz nélkül: a kollégák megkeresik. A levél a kamara arculatában megy. */
+async function handleFollowup(body: Record<string, any>) {
+  const query = String(body.query || "").trim();
+  if (!query) return json({ error: "hiányzó kérdés" }, 400);
+
+  const user = body.user || {};
+  const cimzett = user.email || null;
+
+  const inner = `
+    <p style="margin:0 0 14px">Tisztelt ${esc(user.name || "Kollégánk")}!</p>
+    <p style="margin:0 0 14px">Az alábbi kérdésére a betöltött belső szabályzatokban
+       <b>nem találtunk fedezetet</b>, ezért a rendszer nem adott rá választ:</p>
+    <p style="margin:0 0 16px;padding:12px 14px;background:#F0F3F4;border-left:3px solid #C63F3F">${esc(query)}</p>
+    <p style="margin:0 0 14px">A kérdést továbbítottuk az illetékes kollégának,
+       <b>hamarosan jelentkezik</b> Önnél. A kérdés egyben bekerült a hiánylistába is,
+       amely megmutatja, hol érdemes a belső szabályozást kiegészíteni.</p>
+    <p style="margin:0;color:#6B6B6B;font-size:13px">Köszönjük, hogy jelezte -
+       a meg nem válaszolt kérdés is segít jobbá tenni a szabályozást.</p>`;
+
+  return await sendMail("followup", "Kérdésére hamarosan válaszolunk",
+                        shell("Kamarai Tudástár", "Kollégánk hamarosan jelentkezik", inner),
+                        cimzett, null);
+}
+
 async function handleGap(body: Record<string, any>) {
   const query = String(body.query || "").trim();
   if (!query)             return json({ error: "hiányzó kérdés" }, 400);
@@ -260,7 +333,9 @@ serve(async (req) => {
   catch { return json({ error: "érvénytelen JSON" }, 400); }
 
   const action = String(body.action || "");
-  if (action === "gap")       return await handleGap(body);
+  if (action === "answer")   return await handleAnswer(body);
+  if (action === "followup") return await handleFollowup(body);
+  if (action === "gap")      return await handleGap(body);
   if (action === "deprecate") return await handleDeprecate(body);
   return json({ error: "ismeretlen művelet" }, 400);
 });

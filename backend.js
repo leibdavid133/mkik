@@ -11,10 +11,10 @@
 var BACKEND = {
   url:     "https://yrddksgtictcpkqnguko.supabase.co/functions/v1",
   timeout: 2500,
-  /* Alapból KI: adatvédelmi témájú belső rendszernél igaz állítás kell arról,
-     hogy alapértelmezés szerint semmi nem hagyja el a gépet. Az adminban egy
-     kattintással bekapcsolható, ha a többgépes közös napló kell. */
-  on:      false
+  /* Bekapcsolva, mert a beszélgetés-értesítő e-mail ezen keresztül megy ki.
+     Az adminban egy kattintással kikapcsolható - kikapcsolva semmi nem hagyja
+     el a gépet, és a rendszer minden más funkciója változatlanul működik. */
+  on:      true
 };
 
 var BACKEND_KEY = "mkik_backend_v1";
@@ -95,6 +95,27 @@ function backendNotifyGap(payload, cb){
     near:    payload.near || [],
     manual:  !!payload.manual
   }, cb);
+}
+
+/* Megválaszolt kérdés -> összefoglaló e-mail: kérdés, válasz, hivatkozott dokumentum. */
+function backendNotifyAnswer(payload, cb){
+  backendPost("mkik-notify", {
+    action:  "answer",
+    query:   payload.query,
+    answer:  payload.answer,
+    verdict: payload.verdict,
+    user:    payload.user,
+    source:  payload.source
+  }, cb || function(){});
+}
+
+/* Fedezet nélküli kérdés -> visszajelzés a kérdezőnek, hogy a kolléga jelentkezik. */
+function backendFollowup(payload, cb){
+  backendPost("mkik-notify", {
+    action: "followup",
+    query:  payload.query,
+    user:   payload.user
+  }, cb || function(){});
 }
 
 /* Új dokumentum-verzió közzététele -> értesítés mindenkinek, aki a régiből kapott választ. */
