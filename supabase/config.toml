@@ -1,0 +1,13 @@
+# Kamarai Tudástár - Supabase konfiguráció
+# A functionök az LDA projektben futnak (ref: yrddksgtictcpkqnguko),
+# mkik_ prefixes táblákkal, az éles LDA leadektől elkülönítve.
+project_id = "mkik-tudastar"
+
+[functions.mkik-log]
+# Kérdés-események rögzítése és a közös napló listázása.
+# Publikus felületről hívjuk, ezért nincs JWT-ellenőrzés.
+verify_jwt = false
+
+[functions.mkik-notify]
+# Resend értesítések: hiány-jelzés és elavulás-jelzés.
+verify_jwt = false

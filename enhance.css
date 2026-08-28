@@ -1,0 +1,106 @@
+/* ============================================================================
+   Kamarai Tudástár - a kiegészítő réteg megjelenése
+
+   Kizárólag a style.css tokenjeit használja, beégetett szín nincs, ezért a
+   sötét mód és a betűméret-váltás automatikusan érvényesül rá is.
+   ============================================================================ */
+
+/* ---------------------------------------------------------------- legközelebbi szakaszok */
+.nearwrap{margin-top:16px}
+
+.nearbox{border:1px solid var(--line); background:var(--bg-soft-2); padding:0 0 4px}
+.nearbox.empty{padding:13px 16px; font-size:.83rem; color:var(--ink-soft)}
+
+.nearhead{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap;
+  padding:10px 16px; border-bottom:1px solid var(--line);
+  font-family:var(--cond); font-size:.75rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.7px; color:var(--ink-soft)}
+.nearhead i{color:var(--ink-faint)}
+.nearnote{font-family:var(--sans); font-size:.72rem; font-weight:400; text-transform:none;
+  letter-spacing:0; color:var(--ink-faint)}
+
+.nearitem{padding:13px 16px; border-bottom:1px dashed var(--line)}
+.nearitem:last-child{border-bottom:0}
+.neartext{border-left:3px solid var(--line); padding:2px 0 2px 13px;
+  font-size:.86rem; line-height:1.6; color:var(--ink-soft)}
+.srcbtn.near{margin-top:10px; font-size:.78rem; color:var(--ink-soft); background:var(--surface)}
+.srcbtn.near:hover{color:var(--mkik-green); border-color:var(--mkik-green)}
+
+/* ---------------------------------------------------------------- hiánybejelentés */
+.gapbar{margin-top:14px; padding:13px 16px; background:var(--bg-soft);
+  border-left:3px solid var(--mkik-cta);
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+.gaptext{flex:1 1 260px; font-size:.83rem; color:var(--ink-soft)}
+.gaptext b{color:var(--ink)}
+.gapbtn{flex:0 0 auto; height:34px; font-size:.78rem}
+.gapbtn i{margin-right:6px}
+.gapstate{flex:1 1 100%; font-size:.78rem; min-height:1px}
+.gapstate:empty{display:none}
+.gapok{color:var(--ok)}
+.gapok i{margin-right:5px}
+.gapwait{color:var(--ink-faint)}
+.gapoff{color:var(--ink-faint)}
+
+/* ---------------------------------------------------------------- napló-jelölések */
+.stalebadge{display:inline-block; margin-left:8px; padding:2px 7px;
+  font-family:var(--cond); font-size:.66rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.4px; white-space:nowrap;
+  background:rgba(198,63,63,.13); color:var(--mkik-red)}
+.stalebadge i{margin-right:4px}
+.stalerow td{background:rgba(198,63,63,.035)}
+.remotemark{color:var(--ink-faint); font-style:italic}
+
+/* ---------------------------------------------------------------- skálázás */
+.scalebox{margin-top:26px; border-top:1px solid var(--line); padding-top:22px}
+.scaletitle{font-size:1.05rem; color:var(--ink)}
+.scalelead{margin:8px 0 16px; font-size:.86rem; color:var(--ink-soft); max-width:62ch}
+
+.scaletag{display:inline-block; font-family:var(--cond); font-size:.69rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:.4px; padding:3px 8px; white-space:nowrap}
+.scaletag.ok{background:rgba(93,180,124,.16); color:var(--ok)}
+.scaletag.warn{background:rgba(184,135,59,.16); color:#8A5A00}
+.scaletag.bad{background:rgba(198,63,63,.16); color:var(--mkik-red)}
+[data-theme="dark"] .scaletag.warn{color:#D8AE68}
+
+.scalenote{margin-top:16px; padding:13px 16px; background:var(--bg-soft);
+  border-left:3px solid var(--mkik-green); font-size:.83rem; color:var(--ink-soft)}
+.scalenote b{color:var(--ink)}
+.scalesrc{display:block; margin-top:8px; font-size:.72rem; color:var(--ink-faint)}
+
+/* ---------------------------------------------------------------- admin: verzió közzététele */
+.pubbtn{color:var(--mkik-green)}
+
+.pubform{padding:4px 0}
+.pubform .pfrow{margin-bottom:14px}
+.pubform label{display:block; font-family:var(--cond); text-transform:uppercase;
+  font-size:.72rem; letter-spacing:.6px; color:var(--ink-soft); margin-bottom:6px}
+.pubform input, .pubform textarea{width:100%; padding:9px 12px; border:1px solid var(--line);
+  background:var(--bg); border-radius:2px; font-size:.86rem}
+.pubform input:focus, .pubform textarea:focus{outline:2px solid var(--mkik-green); outline-offset:-1px}
+.pubform textarea{min-height:82px; resize:vertical; line-height:1.55}
+.pubhint{font-size:.78rem; color:var(--ink-faint); margin:-6px 0 14px}
+
+.pubwarn{padding:12px 14px; background:var(--bg-soft); border-left:3px solid var(--mkik-cta);
+  font-size:.82rem; color:var(--ink-soft); margin-bottom:16px}
+.pubwarn b{color:var(--ink)}
+
+.pubfoot{display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  border-top:1px solid var(--line); padding-top:15px; margin-top:4px}
+.pubstate{flex:1 1 100%; font-size:.8rem; min-height:1px}
+.pubstate:empty{display:none}
+.pubstate .ok{color:var(--ok)}
+.pubstate .bad{color:var(--mkik-red)}
+.pubstate .wait{color:var(--ink-faint)}
+
+/* ---------------------------------------------------------------- backend-kapcsoló */
+.bkrow{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px}
+.bkdot{width:8px; height:8px; border-radius:50%; background:var(--ink-faint); flex:0 0 8px}
+.bkdot.on{background:var(--ok)}
+.bkdot.off{background:var(--mkik-red)}
+
+/* ---------------------------------------------------------------- keskeny kijelző */
+@media (max-width:640px){
+  .gapbar{align-items:flex-start}
+  .gapbtn{width:100%}
+  .scalelead{max-width:none}
+}

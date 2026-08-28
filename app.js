@@ -211,6 +211,16 @@ function buildIndex(){
   for (var d = 0; d < docs.length; d++){ IDX.byDoc[docs[d].id] = docs[d]; }
 }
 
+/* A szinonima-kulcsot toldalékolt alakra is megtaláljuk:
+   "válaszolni" -> a "válaszol" kulcs. */
+function synonymsFor(q){
+  if (SYN[q]) return SYN[q];
+  for (var k in SYN){
+    if (SYN.hasOwnProperty(k) && prefixMatch(k, q)) return SYN[k];
+  }
+  return null;
+}
+
 function search(query){
   var qt = tokens(query);
   var uniq = [], seen = {};
@@ -228,7 +238,7 @@ function search(query){
     if (q.length < 3) continue;
     var forms = [q], alt = stripIgekoto(q);
     if (alt) forms.push(alt);
-    var syns = SYN[q] || (alt ? SYN[alt] : null) || [];
+    var syns = synonymsFor(q) || (alt ? synonymsFor(alt) : null) || [];
     var cands = [], loose = [], syn = [];
     for (var v = 0; v < IDX.vocab.length; v++){
       var term = IDX.vocab[v], strong = false, weak = false;
@@ -347,12 +357,14 @@ function search(query){
 /* Három fokozat. A "gyenge" azt jelenti: van kapcsolódó rendelkezés, de nem
    biztos, hogy az a válasz. Ezt inkább kiírjuk, mint hogy magabiztosnak
    tűnjön egy bizonytalan találat. */
-var STRONG = { minScore: 7.0, minCoverage: 0.7 };
+var STRONG = { minScore: 7.0, minCoverage: 0.45 };
 
 function verdictOf(r){
+  /* A kapuzás a sima szó-lefedettségen dől el (válaszol-e egyáltalán),
+     az idf-súlyozott fedezet csak azt dönti el, mennyire magabiztos a válasz. */
   if (!r.hits.length) return "none";
   if (r.best < GATE.minScore) return "none";
-  if (r.coverage < GATE.minCoverage) return "none";
+  if (r.plainCov < GATE.minCoverage) return "none";
   if (r.terms.length >= GATE.minTerms && r.hits[0].matched < 2 && !r.amounts.length) return "none";
   if (r.best >= STRONG.minScore && r.coverage >= STRONG.minCoverage) return "strong";
   return "weak";

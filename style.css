@@ -134,6 +134,13 @@ header{background:var(--surface); border-bottom:1px solid var(--line-soft)}
   .tool-sep{display:none}
   .mainmenu a{padding:6px 9px; font-size:.8rem}
   .pagehead h1{font-size:1.4rem}
+  /* a kérdező sáv mobilon egymás alá kerül (a gomb korábban 2 px-t kilógott) */
+  .askhero{padding:14px}
+  .askfield{flex-wrap:wrap; padding:10px}
+  .askfield .fa-magnifying-glass{display:none}
+  .askfield input{flex:1 1 100%; width:100%; height:48px; padding:0 6px}
+  .askfield .btn{width:100%; margin:9px 0 0}
+  .state{padding:32px 18px}
 }
 
 /* oldalsáv */
