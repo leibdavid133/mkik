@@ -438,19 +438,32 @@
         if (diktalFut) { if (felismero) felismero.stop(); return; }
         felismero = new Felismero();
         felismero.lang = 'hu-HU';
-        felismero.interimResults = false;
+        felismero.interimResults = true;
         felismero.maxAlternatives = 1;
         var kapottEredmenyt = false;
+        // az alap-szöveg, ami előtte már a mezőben volt — az élő, még nem
+        // végleges felismert szöveg ehhez képest frissül, nem duplikálódik
+        var alapSzoveg = textarea.value;
         felismero.onstart = function () {
           diktalFut = true;
           diktalGomb.classList.add('megk-diktal-aktiv');
           diktalGomb.textContent = 'Felvétel — kattints a leállításhoz';
         };
         felismero.onresult = function (ev) {
-          kapottEredmenyt = true;
-          var szoveg = '';
-          for (var i = 0; i < ev.results.length; i++) szoveg += ev.results[i][0].transcript;
-          textarea.value = (textarea.value ? textarea.value + ' ' : '') + szoveg;
+          var vegleges = '', pillanatnyi = '';
+          for (var i = ev.resultIndex; i < ev.results.length; i++) {
+            if (ev.results[i].isFinal) vegleges += ev.results[i][0].transcript;
+            else pillanatnyi += ev.results[i][0].transcript;
+          }
+          if (vegleges) {
+            kapottEredmenyt = true;
+            alapSzoveg = (alapSzoveg ? alapSzoveg + ' ' : '') + vegleges;
+            textarea.value = alapSzoveg;
+          } else if (pillanatnyi) {
+            // élő, még nem végleges előnézet — azonnal látszik, ha a
+            // felismerés ténylegesen hallja, amit mondunk
+            textarea.value = (alapSzoveg ? alapSzoveg + ' ' : '') + pillanatnyi;
+          }
           textarea.dispatchEvent(new Event('input'));
         };
         var vissza = function () {

@@ -73,8 +73,13 @@
    * magától befejeződik (pl. a böngésző csendre automatikusan leállítja),
    * mielőtt a hívó explicit stopAndTranscribe()-ot hívott volna — így a
    * hívó felület vissza tudja állítani a gomb állapotát.
+   *
+   * `onInterim` opcionális: MÉG BESZÉD KÖZBEN, folyamatosan meghívódik a
+   * pillanatnyi (nem végleges) felismert szöveggel — így azonnal látszik,
+   * ha a felismerés ténylegesen hallja és érti, amit mondunk, nem kell
+   * megvárni a leállítást egy fekete dobozhoz.
    */
-  function startRecording(unexpectedEndCallback) {
+  function startRecording(unexpectedEndCallback, onInterim) {
     return new Promise(function (resolveStart, rejectStart) {
       if (!isSupported()) {
         rejectStart(
@@ -96,7 +101,7 @@
       var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       var rec = new SpeechRecognition();
       rec.lang = "hu-HU";
-      rec.interimResults = false;
+      rec.interimResults = true;
       rec.maxAlternatives = 1;
 
       var startSettled = false;
@@ -120,9 +125,19 @@
 
       rec.onresult = function (event) {
         if (transcriptSettled) return;
-        transcriptSettled = true;
-        var transcript = (event.results && event.results[0] && event.results[0][0] && event.results[0][0].transcript) || "";
-        transcriptResolve(transcript.trim());
+        var finalText = "";
+        var interimText = "";
+        for (var i = event.resultIndex; i < event.results.length; i++) {
+          var result = event.results[i];
+          if (result.isFinal) finalText += result[0].transcript;
+          else interimText += result[0].transcript;
+        }
+        if (finalText) {
+          transcriptSettled = true;
+          transcriptResolve(finalText.trim());
+        } else if (interimText && onInterim) {
+          onInterim(interimText.trim());
+        }
       };
 
       rec.onerror = function (event) {
