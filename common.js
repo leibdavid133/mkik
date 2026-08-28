@@ -151,7 +151,7 @@ var LANG_KEY = "mkik_kb_lang_v1";
 var I18N = {
   hu: {
     brand_sub:"Belső dokumentumkereső · MKIK",
-    nav_ask:"Kérdezés", nav_docs:"Dokumentumok", nav_gaps:"Hiánylista",
+    nav_megk:"Megkeresések", nav_ask:"Kérdezés", nav_docs:"Dokumentumok", nav_gaps:"Hiánylista",
     nav_log:"Előzmények", nav_cost:"Költség", nav_account:"Fiók",
     crumb_home:"kezdőlap", crumb_sys:"belső rendszerek",
     ask_title:"Kamarai Tudástár",
@@ -170,7 +170,7 @@ var I18N = {
   },
   en: {
     brand_sub:"Internal document search · MKIK",
-    nav_ask:"Ask", nav_docs:"Documents", nav_gaps:"Coverage gaps",
+    nav_megk:"Enquiries", nav_ask:"Ask", nav_docs:"Documents", nav_gaps:"Coverage gaps",
     nav_log:"History", nav_cost:"Cost", nav_account:"Account",
     crumb_home:"home", crumb_sys:"internal systems",
     ask_title:"Chamber Knowledge Base",

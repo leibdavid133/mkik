@@ -373,3 +373,19 @@ footer li a{color:#fff; font-family:var(--cond); font-size:.84rem}
 .blocked i{margin-right:7px; color:var(--mkik-red)}
 .t-weak{background:rgba(184,135,59,.16); color:#8A5A00}
 [data-theme="dark"] .t-weak{color:#D8AE68}
+
+/* ---------------------------------------------------------------- megfogalmazott válasz */
+.answer{font-size:1.06rem; line-height:1.65; color:var(--ink); padding:16px 0 4px}
+.answermeta{font-size:.78rem; color:var(--ink-soft); padding-bottom:14px;
+  border-bottom:1px solid var(--line-soft); margin-bottom:4px}
+.answermeta i{margin-right:6px; color:var(--mkik-green)}
+.answermeta .dim{color:var(--ink-faint)}
+.quotelabel{font-family:var(--cond); font-size:.7rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.6px; color:var(--ink-faint); margin-bottom:7px}
+.related{display:flex; flex-wrap:wrap; gap:7px; align-items:center; padding:12px 0 2px;
+  border-top:1px solid var(--line-soft)}
+.rlabel{font-family:var(--cond); font-size:.7rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.6px; color:var(--ink-faint); margin-right:3px}
+.relbtn{border:1px solid var(--line); background:var(--bg-soft-2); border-radius:2px;
+  padding:5px 10px; font-size:.75rem; color:var(--ink-soft)}
+.relbtn:hover{border-color:var(--mkik-green); color:var(--mkik-green)}
