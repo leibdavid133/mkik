@@ -347,3 +347,14 @@ footer li a{color:#fff; font-family:var(--cond); font-size:.84rem}
   background:var(--mkik-green); color:#fff; padding:11px 18px; font-size:.83rem;
   box-shadow:0 10px 30px rgba(0,0,0,.3); opacity:0; transition:.25s; z-index:60}
 .toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+
+/* ---------------------------------------------------------------- gyenge illeszkedés */
+.verdict.weak{color:#8A5A00; background:rgba(184,135,59,.14)}
+[data-theme="dark"] .verdict.weak{color:#D8AE68}
+.weaknote{margin:14px 0 2px; padding:11px 14px; background:rgba(184,135,59,.1);
+  border-left:3px solid #B8873B; font-size:.83rem; color:var(--ink-soft)}
+.blocked{margin-top:14px; padding:11px 14px; background:var(--bg-soft);
+  border-left:3px solid var(--mkik-red); font-size:.83rem; color:var(--ink-soft)}
+.blocked i{margin-right:7px; color:var(--mkik-red)}
+.t-weak{background:rgba(184,135,59,.16); color:#8A5A00}
+[data-theme="dark"] .t-weak{color:#D8AE68}

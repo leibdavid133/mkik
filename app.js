@@ -103,7 +103,47 @@ function prefixMatch(a, b){
    előtagja a másiknak. Ezeket gyengébb súllyal vesszük figyelembe, hogy a
    valódi találat meglegyen, de a véletlen egybeesés ("szabadság" / "szabadalom")
    ne tudjon önmagában választ kiváltani. */
-var LOOSE_MIN = 6, LOOSE_W = 0.45;
+var LOOSE_MIN = 5, LOOSE_W = 0.45;
+
+/* Köznyelv -> a szabályzatok hivatalos szóhasználata. A kérdés szavait
+   kiterjeszti, gyengébb súllyal: a pontos egyezés marad a legerősebb.
+   A kulcsok a köznyelvi alakok, az értékek a négy szabályzatban ténylegesen
+   előforduló kifejezések. */
+var SYN_W = 0.6;
+var SYN = {
+  "válasz":["teljesít","intéz","továbbít","határidő"],
+  "válaszol":["teljesít","intéz","továbbít","határidő"],
+  "keret":["fedezet","előirányzat","költségvetés"],
+  "büdzsé":["fedezet","előirányzat","költségvetés"],
+  "pénz":["fedezet","ellenszolgáltatás","költségvetés"],
+  "lát":["észlel","tapasztal"],
+  "látok":["észlel","tapasztal"],
+  "észrevesz":["észlel","tapasztal","gyanú"],
+  "tender":["ajánlatkérés","ajánlattétel","közbeszerzés"],
+  "árajánlat":["ajánlatkérés","ajánlat","ajánlattétel"],
+  "adatszivárgás":["incidens","jogosulatlan"],
+  "feltörés":["incidens","jogosulatlan","támadás"],
+  "hekker":["incidens","jogosulatlan","támadás"],
+  "laptop":["eszköz","munkaállomás","hordozható"],
+  "telefon":["eszköz","mobil"],
+  "gép":["eszköz","munkaállomás"],
+  "vírus":["kártevő","rosszindulatú"],
+  "jelszó":["hitelesítés","azonosítás","jelszókezelés"],
+  "iktat":["iktatás","nyilvántartásba","érkeztetés"],
+  "iktatni":["iktatás","nyilvántartásba","érkeztetés"],
+  "megőriz":["megőrzés","irattározás","selejtezés"],
+  "tárol":["megőrzés","tárolás","irattározás"],
+  "kolléga":["munkatárs","foglalkoztatott"],
+  "dolgozó":["munkatárs","foglalkoztatott"],
+  "töröl":["törlés","megsemmisítés","selejtezés"],
+  "hossz":["karakter","terjedelem"],
+  "hosszú":["karakter","terjedelem"],
+  "kirúg":["megszűnés","jogviszony"],
+  "szabálytalanság":["szabálytalanság","bejelent","észlel"],
+  "engedély":["jóváhagyás","engedélyez","hozzájárul"],
+  "aláír":["kötelezettségvállalás","kiadmányozás","ellenjegyzés"],
+  "hiba":["incidens","szabálytalanság","hibás"]
+};
 
 function commonPrefix(a, b){
   var n = Math.min(a.length, b.length), i = 0;
@@ -188,17 +228,21 @@ function search(query){
     if (q.length < 3) continue;
     var forms = [q], alt = stripIgekoto(q);
     if (alt) forms.push(alt);
-    var cands = [], loose = [];
+    var syns = SYN[q] || (alt ? SYN[alt] : null) || [];
+    var cands = [], loose = [], syn = [];
     for (var v = 0; v < IDX.vocab.length; v++){
       var term = IDX.vocab[v], strong = false, weak = false;
       for (var f = 0; f < forms.length; f++){
         if (prefixMatch(forms[f], term)){ strong = true; break; }
         if (commonPrefix(forms[f], term) >= LOOSE_MIN) weak = true;
       }
-      if (strong) cands.push(term);
-      else if (weak) loose.push(term);
+      if (strong){ cands.push(term); continue; }
+      if (weak){ loose.push(term); continue; }
+      for (var y = 0; y < syns.length; y++){
+        if (prefixMatch(syns[y], term) || commonPrefix(syns[y], term) >= LOOSE_MIN){ syn.push(term); break; }
+      }
     }
-    groups.push({ q: q, cands: cands, loose: loose });
+    groups.push({ q: q, cands: cands, loose: loose, syn: syn });
   }
   if (!groups.length) return { hits: [], terms: uniq, amounts: amounts, coverage: 0, best: 0 };
 
@@ -216,13 +260,30 @@ function search(query){
         var f4 = e.tf[groups[g].loose[w]];
         if (f4) sum += f4 * LOOSE_W;
       }
+      for (var y2 = 0; y2 < groups[g].syn.length; y2++){
+        var f5 = e.tf[groups[g].syn[y2]];
+        if (f5) sum += f5 * SYN_W;
+      }
       tfs[n] = sum;
       if (sum) df++;
     }
     post.push({ tf: tfs, df: df });
   }
 
-  var k1 = 1.4, b = 0.72, scored = [];
+  /* Előszűrés: csak a kiválasztott kamara anyagából és csak abból, amihez
+     a belépett munkatársnak hozzáférési köre van. */
+  var me = currentUser() || { circles: ["all"] };
+  var chIdx = currentChamber();
+  var docState = {};
+  for (var dk in IDX.byDoc){
+    if (!IDX.byDoc.hasOwnProperty(dk)) continue;
+    var dd = IDX.byDoc[dk];
+    if (dd.chamber !== chIdx) docState[dk] = "chamber";
+    else if (dd.access && dd.access !== "all" && me.circles.indexOf(dd.access) < 0) docState[dk] = "circle";
+    else docState[dk] = null;
+  }
+
+  var k1 = 1.4, b = 0.72, scored = [], blockedBest = 0, blockedDoc = null;
   for (var m = 0; m < IDX.N; m++){
     var ent = IDX.chunks[m], score = 0, matched = 0;
     for (var gg = 0; gg < groups.length; gg++){
@@ -248,32 +309,53 @@ function search(query){
       var bare = ent.c.t.replace(/^\(\d+\)\s*/, "").replace(/^\d+\.\s*/, "");
       if (NUM_RX.test(bare)) score += 2.2;
     }
-    if (score > 0) scored.push({ e: ent, score: score, matched: matched, idx: m });
+    if (score <= 0) continue;
+    var st = docState[ent.c.d];
+    if (st === "circle"){
+      if (score > blockedBest){ blockedBest = score; blockedDoc = IDX.byDoc[ent.c.d]; }
+      continue;
+    }
+    if (st === "chamber") continue;
+    scored.push({ e: ent, score: score, matched: matched, idx: m });
   }
 
   scored.sort(function(x, y){ return y.score - x.score; });
   var top = scored.slice(0, 6);
 
-  /* Fedezet: a kérdés érdemi szavaiból mennyi szerepel a legjobb találatokban. */
-  var hitGroups = 0;
+  /* Fedezet idf-súlyozva: a ritka, tartalmas szó többet nyom a latban, mint
+     a mindenhol előforduló ("kamara"). A korpuszban ismeretlen szó a legritkább,
+     ezért a hiánya erősen rontja a fedezetet. */
+  var covNum = 0, covDen = 0, plainHit = 0;
   for (var h = 0; h < groups.length; h++){
+    var gIdf = Math.log(1 + (IDX.N - post[h].df + 0.5) / (post[h].df + 0.5));
+    covDen += gIdf;
+    var found = false;
     for (var t2 = 0; t2 < Math.min(top.length, 3); t2++){
-      if (post[h].tf[top[t2].idx]){ hitGroups++; break; }
+      if (post[h].tf[top[t2].idx]){ found = true; break; }
     }
+    if (found){ covNum += gIdf; plainHit++; }
   }
-  var coverage = groups.length ? hitGroups / groups.length : 0;
-  if (amounts.length && top.length && top[0].e.c.r) coverage = Math.max(coverage, 1);
+  var coverage = covDen ? covNum / covDen : 0;
+  var plainCov = groups.length ? plainHit / groups.length : 0;
+  if (amounts.length && top.length && top[0].e.c.r){ coverage = 1; plainCov = 1; }
 
-  return { hits: top, terms: uniq, coverage: coverage, amounts: amounts,
-           best: top.length ? top[0].score : 0 };
+  return { hits: top, terms: uniq, coverage: coverage, plainCov: plainCov,
+           amounts: amounts, best: top.length ? top[0].score : 0,
+           blocked: blockedBest >= GATE.minScore ? blockedDoc : null };
 }
 
-function hasCoverage(r){
-  if (!r.hits.length) return false;
-  if (r.best < GATE.minScore) return false;
-  if (r.coverage < GATE.minCoverage) return false;
-  if (r.terms.length >= GATE.minTerms && r.hits[0].matched < 2 && !r.amounts.length) return false;
-  return true;
+/* Három fokozat. A "gyenge" azt jelenti: van kapcsolódó rendelkezés, de nem
+   biztos, hogy az a válasz. Ezt inkább kiírjuk, mint hogy magabiztosnak
+   tűnjön egy bizonytalan találat. */
+var STRONG = { minScore: 7.0, minCoverage: 0.7 };
+
+function verdictOf(r){
+  if (!r.hits.length) return "none";
+  if (r.best < GATE.minScore) return "none";
+  if (r.coverage < GATE.minCoverage) return "none";
+  if (r.terms.length >= GATE.minTerms && r.hits[0].matched < 2 && !r.amounts.length) return "none";
+  if (r.best >= STRONG.minScore && r.coverage >= STRONG.minCoverage) return "strong";
+  return "weak";
 }
 
 /* ---------------------------------------------------------------- megjelenítés */
@@ -295,7 +377,9 @@ function docOf(id){ return IDX.byDoc[id] || { title: "ismeretlen dokumentum", pa
 function renderAnswer(query, r){
   var box = document.getElementById("ans");
 
-  if (!hasCoverage(r)){
+  var verdict = verdictOf(r);
+
+  if (verdict === "none"){
     logEvent(query, "nocov", null);
     box.innerHTML =
       '<div class="ansbox">' +
@@ -305,6 +389,7 @@ function renderAnswer(query, r){
           'A rendszer szándékosan nem fogalmaz meg tippet: a magabiztosan előadott téves válasz többe kerül, mint a meg nem válaszolt kérdés.</p>' +
           '<div class="nocov-why"><b>Amit tenni tudsz:</b> fordulj a szabályzat felelőséhez, vagy jelezd, hogy ez a terület szabályozatlan. ' +
           'A kérdés bekerült a <a href="#" data-goto="gaps">hiánylistába</a>, így a vezetőség látja, hol hiányos a belső szabályozás.</div>' +
+          blockedNote(r) +
           '<div class="costline">Költség: <b>0 Ft</b> - fedezet hiányában a nyelvi modell el sem indult.</div>' +
         '</div>' +
       '</div>';
@@ -315,12 +400,18 @@ function renderAnswer(query, r){
 
   var top = r.hits.slice(0, 3);
   var d0 = docOf(top[0].e.c.d);
-  logEvent(query, "ok", { doc: d0.title, page: top[0].e.c.p, section: top[0].e.c.s });
+  logEvent(query, verdict === "weak" ? "weak" : "ok",
+           { doc: d0.title, page: top[0].e.c.p, section: top[0].e.c.s });
 
   var html =
     '<div class="ansbox">' +
-      '<div class="verdict ok"><span class="dot"></span>Fedezet a szabályzatban</div>' +
-      '<div class="ansbody">';
+      (verdict === "weak"
+        ? '<div class="verdict weak"><span class="dot"></span>Gyenge illeszkedés</div>'
+        : '<div class="verdict ok"><span class="dot"></span>Fedezet a szabályzatban</div>') +
+      '<div class="ansbody">' +
+      (verdict === "weak"
+        ? '<div class="weaknote">A rendszer talált kapcsolódó rendelkezést, de nem biztos, hogy ez válaszol a kérdésedre. Olvasd el a forrást, mielőtt továbbadod a választ.</div>'
+        : "");
 
   for (var i = 0; i < top.length; i++){
     var c = top[i].e.c, d = docOf(c.d);
@@ -339,7 +430,7 @@ function renderAnswer(query, r){
       '</div>';
   }
 
-  html +=
+  html += blockedNote(r) +
         '<div class="costline">Költség: <b>0 Ft</b> - a válasz a szabályzat szó szerinti részlete, ' +
         'nyelvi modell nem futott. <span class="conf">Illeszkedés: ' + Math.round(r.coverage * 100) + '%</span></div>' +
       '</div>' +
@@ -354,6 +445,15 @@ function renderAnswer(query, r){
     });
   }
   refreshSidebar();
+}
+
+/* Ha a legjobb találat olyan dokumentumból jönne, amihez nincs jogosultság,
+   azt jelezzük - de a tartalmából semmit nem mutatunk meg. */
+function blockedNote(r){
+  if (!r.blocked) return "";
+  return '<div class="blocked"><i class="fa-solid fa-lock"></i> ' +
+    'Ehhez a kérdéshez tartozik szabályzat, amihez nincs hozzáférésed (' +
+    esc(r.blocked.title) + '). A tartalma nem jelenik meg. Kérj hozzáférést a rendszergazdától.</div>';
 }
 
 function bindGoto(scope){
@@ -485,20 +585,25 @@ function renderLog(){
     var r = rows[i];
     h += "<tr><td>" + esc(r.ts) + "</td><td>" + esc(r.q) + "</td><td>" + esc(r.u) +
          '<span class="sub2">' + esc(r.role) + "</span></td><td>" + esc(r.ch) + "</td><td>" +
-         (r.r === "ok" ? '<span class="tag t-ok">megválaszolva</span>'
-                       : '<span class="tag t-no">nincs fedezet</span>') +
+         resultTag(r.r) +
          "</td><td>" + (r.src ? esc(r.src) : '<span class="muted">-</span>') +
          '</td><td class="num">0 Ft</td></tr>';
   }
   el.innerHTML = h + "</tbody></table>";
 }
 
+function resultTag(v){
+  if (v === "ok")   return '<span class="tag t-ok">megválaszolva</span>';
+  if (v === "weak") return '<span class="tag t-weak">gyenge illeszkedés</span>';
+  return '<span class="tag t-no">nincs fedezet</span>';
+}
+
 function renderGaps(){
   var rows = loadLog(), gaps = {};
   var total = rows.length, miss = 0;
   for (var i = 0; i < rows.length; i++){
-    if (rows[i].r !== "nocov") continue;
-    miss++;
+    if (rows[i].r !== "nocov" && rows[i].r !== "weak") continue;
+    if (rows[i].r === "nocov") miss++;
     var k = rows[i].q.trim().toLowerCase();
     if (!gaps[k]) gaps[k] = { q: rows[i].q, n: 0, last: rows[i].ts, ch: {} };
     gaps[k].n++;
@@ -896,6 +1001,7 @@ function init(){
   document.getElementById("loginWrap").hidden = true;
   document.getElementById("app").hidden = false;
 
+  applyDocMeta();
   buildIndex();
   buildChambers();
   showUser();

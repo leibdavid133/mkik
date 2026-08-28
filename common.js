@@ -32,12 +32,12 @@ var CHAMBERS = [
 ];
 
 var CATEGORIES = [
-  { key:"ugyrend",    title:"Ügyrend és SZMSZ",   en:"Rules of procedure" },
-  { key:"eljaras",    title:"Eljárásrendek",      en:"Procedures" },
-  { key:"szabalyzat", title:"Belső szabályzatok", en:"Internal policies" },
-  { key:"utasitas",   title:"Vezetői utasítások", en:"Management directives" },
-  { key:"korlevel",   title:"Körlevelek",         en:"Circulars" },
-  { key:"zart",       title:"HR és pénzügy",      en:"HR and finance", restricted:true }
+  { key:"beszerzes",   title:"Beszerzés és gazdálkodás", en:"Procurement and finance" },
+  { key:"adatvedelem", title:"Adatvédelem",              en:"Data protection" },
+  { key:"iratkezeles", title:"Iratkezelés",              en:"Records management" },
+  { key:"it",          title:"IT-biztonság",             en:"IT security" },
+  { key:"ugyrend",     title:"Ügyrend és SZMSZ",         en:"Rules of procedure" },
+  { key:"zart",        title:"HR és pénzügy",            en:"HR and finance", restricted:true }
 ];
 
 /* ---------------------------------------------------------------- felhasználók
@@ -242,3 +242,36 @@ function initChrome(){
   applyFontStep(getFontStep());
   applyLang();
 }
+
+/* ---------------------------------------------------------------- dokumentum-metaadat
+   Az adminban módosított kamara- és hozzáférési kör beállítás. Külön tároljuk,
+   hogy az újraindexelés (data/kb.js) ne írja felül a kézi besorolást. */
+var DOCMETA_KEY = "mkik_kb_docmeta_v1";
+
+function getDocMeta(){
+  try { return JSON.parse(localStorage.getItem(DOCMETA_KEY) || "{}"); } catch (e) { return {}; }
+}
+function setDocMeta(id, patch){
+  var all = getDocMeta();
+  all[id] = all[id] || {};
+  for (var k in patch){ if (patch.hasOwnProperty(k)) all[id][k] = patch[k]; }
+  try { localStorage.setItem(DOCMETA_KEY, JSON.stringify(all)); } catch (e) {}
+}
+function applyDocMeta(){
+  if (!window.KB || !window.KB.docs) return;
+  var all = getDocMeta();
+  for (var i = 0; i < window.KB.docs.length; i++){
+    var d = window.KB.docs[i], m = all[d.id];
+    if (!m) continue;
+    if (typeof m.chamber === "number") d.chamber = m.chamber;
+    if (m.access) d.access = m.access;
+    if (m.category) d.category = m.category;
+  }
+}
+
+var ACCESS_CIRCLES = [
+  { key:"all",     title:"Mindenki" },
+  { key:"hr",      title:"HR-kör" },
+  { key:"penzugy", title:"Pénzügyi kör" },
+  { key:"vezetoi", title:"Vezetői kör" }
+];

@@ -33,7 +33,7 @@ function saveOffChambers(a){
   try { localStorage.setItem(CHOFF_KEY, JSON.stringify(a)); } catch (e) {}
 }
 
-function docs(){ return (window.KB && window.KB.docs) || []; }
+function docs(){ applyDocMeta(); return (window.KB && window.KB.docs) || []; }
 function chunks(){ return (window.KB && window.KB.chunks) || []; }
 
 function catTitle(key){
@@ -86,27 +86,51 @@ function renderDocs(){
     el.innerHTML = emptyState("fa-regular fa-folder-open", "Nincs betöltött dokumentum",
       "Tölts fel egy szabályzatot a fenti mezőben.");
   } else {
-    var h = '<table><thead><tr><th>Dokumentum</th><th>Kamara</th><th>Kategória</th><th>Hozzáférés</th>' +
-            '<th>Verzió</th><th>Hatályos</th><th class="num">Oldal</th><th class="num">Rész</th><th></th></tr></thead><tbody>';
+    var h = '<table><thead><tr><th>Dokumentum</th><th>Kamara</th><th>Kategória</th><th>Hozzáférési kör</th>' +
+            '<th>Verzió</th><th class="num">Oldal</th><th class="num">Rész</th><th></th></tr></thead><tbody>';
     for (var i = 0; i < d.length; i++){
       var x = d[i];
+      var chSel = '<select class="minisel" data-doc="' + esc(x.id) + '" data-field="chamber">';
+      for (var c = 0; c < CHAMBERS.length; c++){
+        chSel += '<option value="' + c + '"' + (c === x.chamber ? " selected" : "") + ">" + esc(CHAMBERS[c].short) + "</option>";
+      }
+      chSel += "</select>";
+      var catSel = '<select class="minisel" data-doc="' + esc(x.id) + '" data-field="category">';
+      for (var k = 0; k < CATEGORIES.length; k++){
+        catSel += '<option value="' + CATEGORIES[k].key + '"' + (CATEGORIES[k].key === x.category ? " selected" : "") +
+                  ">" + esc(CATEGORIES[k].title) + "</option>";
+      }
+      catSel += "</select>";
+      var acSel = '<select class="minisel" data-doc="' + esc(x.id) + '" data-field="access">';
+      for (var s2 = 0; s2 < ACCESS_CIRCLES.length; s2++){
+        acSel += '<option value="' + ACCESS_CIRCLES[s2].key + '"' + (ACCESS_CIRCLES[s2].key === x.access ? " selected" : "") +
+                 ">" + esc(ACCESS_CIRCLES[s2].title) + "</option>";
+      }
+      acSel += "</select>";
       h += "<tr><td><b>" + esc(x.title) + '</b><span class="sub2">' + esc(x.code) + " · " + esc(x.file) + "</span></td>" +
-           "<td>" + esc(CHAMBERS[x.chamber].short) + "</td><td>" + esc(catTitle(x.category)) + "</td>" +
-           "<td>" + (x.access === "all" ? '<span class="tag t-ok">mindenki</span>'
-                                        : '<span class="tag t-no">korlátozott</span>') + "</td>" +
-           "<td>v" + esc(x.version) + "</td><td>" + esc(x.effective) + '</td><td class="num">' + x.pages +
+           "<td>" + chSel + "</td><td>" + catSel + "</td><td>" + acSel + "</td>" +
+           "<td>v" + esc(x.version) + '</td><td class="num">' + x.pages +
            '</td><td class="num">' + x.chunkCount + "</td>" +
-           '<td><div class="rowbtn"><button class="iconbtn" data-doc="' + esc(x.id) + '" data-act="reindex" title="Újraindexelés"><i class="fa-solid fa-rotate"></i></button>' +
-           '<button class="iconbtn danger" data-doc="' + esc(x.id) + '" data-act="off" title="Kivonás"><i class="fa-solid fa-ban"></i></button></div></td></tr>';
+           '<td><button class="iconbtn" data-doc="' + esc(x.id) + '" data-act="reindex" title="Újraindexelés"><i class="fa-solid fa-rotate"></i></button></td></tr>';
     }
     el.innerHTML = h + "</tbody></table>";
     var bs = el.querySelectorAll(".iconbtn");
     for (var b = 0; b < bs.length; b++){
       bs[b].addEventListener("click", function(){
-        var act = this.getAttribute("act") || this.getAttribute("data-act");
-        toast(act === "reindex"
-          ? "Újraindexelés elindítva. A háttérfolyamat a szerveren fut."
-          : "Kivonás rögzítve. A dokumentum a következő indexeléskor kiesik.");
+        toast("Újraindexelés elindítva. A háttérfolyamat a szerveren fut.");
+      });
+    }
+    var sels = el.querySelectorAll(".minisel");
+    for (var q = 0; q < sels.length; q++){
+      sels[q].addEventListener("change", function(){
+        var f = this.getAttribute("data-field");
+        var v = f === "chamber" ? parseInt(this.value, 10) : this.value;
+        var patch = {}; patch[f] = v;
+        setDocMeta(this.getAttribute("data-doc"), patch);
+        renderDocs(); renderChambers(); renderDash();
+        toast(f === "access"
+          ? "Hozzáférési kör módosítva. A tudástárban azonnal érvényes."
+          : "Besorolás mentve.");
       });
     }
   }
