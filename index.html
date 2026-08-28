@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kamarai Tudástár - Magyar Kereskedelmi és Iparkamara</title>
+<meta name="description" content="Belső dokumentumkereső a kamarai munkatársaknak. Minden válasz forrása visszavezethető a hatályos szabályzatra.">
+<link rel="icon" href="assets/mkik-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Roboto+Condensed:wght@400;700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+/* ============================================================
+   MKIK design tokenek - a mkik.hu-n élőben mért értékek
+   (computed style, 2026.08.28, /tortenet aloldal)
+   ============================================================ */
+:root{
+  --mkik-green:      #346B54;  /* címsor, aktív menüpont */
+  --mkik-green-dark: #2B5847;
+  --mkik-footer:     #367F5C;  /* footer.theme háttér */
+  --mkik-cta:        #5DB47C;  /* elsődleges gomb */
+  --mkik-red:        #C63F3F;  /* kiemelt menüpont, korlátozott kör */
+  --ink:             #373737;  /* törzsszöveg */
+  --ink-soft:        #6B6B6B;
+  --ink-faint:       #949494;
+  --link:            #337AB7;  /* Bootstrap 3 alap link */
+  --bg:              #FFFFFF;
+  --bg-soft:         #F0F3F4;  /* .theme világos szekció */
+  --bg-soft-2:       #F7F8F9;
+  --line:            #E0DDD6;
+  --line-soft:       #F2F3F3;
+
+  /* oldalsáv-akkordeon paletta (az eredeti kategória-gombokból) */
+  --cat-1: #1F7892;  --cat-2: #268356;  --cat-3: #A55B10;
+  --cat-4: #974B8A;  --cat-5: #845927;  --cat-6: #C63F3F;
+
+  --container: 1170px;
+  --slab: "Roboto Slab", Georgia, serif;
+  --cond: "Roboto Condensed", "Arial Narrow", Arial, sans-serif;
+  --sans: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:var(--sans); font-size:14px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%}
+a{color:var(--link); text-decoration:none}
+a:hover{text-decoration:underline}
+button,input,select,textarea{font-family:inherit; font-size:inherit; color:inherit}
+button{cursor:pointer; border:0; background:none}
+h1,h2,h3,h4{font-family:var(--slab); font-weight:700; margin:0}
+.container{max-width:var(--container); margin:0 auto; padding:0 15px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* ============================================================
+   FEJLÉC
+   ============================================================ */
+header{background:#fff; border-bottom:1px solid var(--line-soft)}
+.top-bar{display:flex; align-items:center; gap:26px; padding:22px 0 16px}
+.logo{flex:0 0 165px; display:block}
+.logo img{width:165px; height:79px; display:block}
+
+.searchbox{position:relative; flex:1; max-width:345px}
+.searchbox input{
+  width:100%; height:34px; padding:0 12px 0 34px;
+  border:1px solid var(--line); border-radius:3px; background:#fff;
+  font-size:13px; color:var(--ink);
+}
+.searchbox input::placeholder{color:var(--ink-faint); font-style:italic}
+.searchbox input:focus{outline:2px solid var(--mkik-green); outline-offset:-1px}
+.searchbox .fa-magnifying-glass{
+  position:absolute; left:12px; top:10px; color:var(--ink-faint); font-size:13px;
+}
+
+.top-tools{margin-left:auto; display:flex; align-items:center; gap:16px}
+.tool-btn{color:var(--ink-soft); font-size:15px; line-height:1; padding:4px}
+.tool-btn:hover{color:var(--mkik-green)}
+.tool-btn.aa{font-family:var(--slab); font-weight:700; font-size:17px}
+.tool-sep{width:1px; height:22px; background:var(--line)}
+.lang-pill{
+  display:inline-flex; align-items:center; gap:7px;
+  background:var(--mkik-cta); color:#fff; font-weight:600;
+  padding:6px 12px; border-radius:3px; font-size:13px;
+}
+.user-chip{display:flex; align-items:center; gap:9px}
+.user-chip .av{
+  width:32px; height:32px; border-radius:50%; background:var(--mkik-green);
+  color:#fff; display:flex; align-items:center; justify-content:center;
+  font-family:var(--cond); font-weight:700; font-size:13px; letter-spacing:.4px;
+}
+.user-chip .who{line-height:1.25}
+.user-chip .who b{display:block; font-size:13px; font-weight:600; color:var(--ink)}
+.user-chip .who span{font-size:11.5px; color:var(--ink-faint)}
+
+/* főmenü - az eredeti jobbra zárt, uppercase szedés */
+.mainmenu{display:flex; justify-content:flex-end; flex-wrap:wrap; padding-bottom:14px}
+.mainmenu a{
+  font-family:var(--cond); font-size:14px; font-weight:400; text-transform:uppercase;
+  color:var(--ink); padding:6px 13px; letter-spacing:.2px; white-space:nowrap;
+}
+.mainmenu a:hover{color:var(--mkik-green); text-decoration:none}
+.mainmenu a.active{color:var(--mkik-green); font-weight:700}
+.mainmenu a.flag{color:var(--mkik-red)}
+.mainmenu .div{width:1px; background:var(--line); margin:6px 4px}
+
+/* ============================================================
+   ALOLDAL-FEJ
+   ============================================================ */
+.pagehead{padding:34px 0 0}
+.pagehead .inner{max-width:750px; margin-left:auto}
+.pagehead h1{font-size:30px; color:var(--ink); letter-spacing:-.2px}
+.crumbs{margin-top:6px; font-family:var(--cond); font-size:12.5px; color:var(--mkik-green)}
+.crumbs a{color:var(--mkik-green)}
+.crumbs .sep{color:var(--line); margin:0 7px}
+.pagehead hr{border:0; border-top:1px solid var(--line-soft); margin:26px 0 0}
+
+/* ============================================================
+   TÖRZS - kéthasábos
+   ============================================================ */
+.body-row{display:flex; gap:30px; align-items:flex-start; padding:30px 0 50px}
+.sidebar{flex:0 0 360px}
+.content{flex:1; min-width:0}
+@media (max-width:900px){
+  /* oszlopos elrendezésnél az align-items:flex-start összehúzná a tartalmat,
+     ezért itt stretch kell, különben a fő oszlop a szövege szélességére ugrik */
+  .body-row{flex-direction:column; gap:28px; align-items:stretch}
+  .sidebar{flex:none; width:100%}
+  .content{width:100%}
+  .pagehead .inner{max-width:none; margin-left:0}
+  .top-bar{flex-wrap:wrap; gap:16px}
+  .searchbox{order:3; flex:1 1 100%; max-width:none}
+  .mainmenu{justify-content:flex-start}
+}
+@media (max-width:560px){
+  .top-bar{gap:12px; padding:16px 0 12px}
+  .logo{flex:0 0 132px}
+  .logo img{width:132px; height:63px}
+  .top-tools{gap:10px}
+  .tool-sep{display:none}
+  .user-chip .who{display:none}
+  .mainmenu a{padding:6px 9px; font-size:13px}
+  .pagehead{padding:24px 0 0}
+  .pagehead h1{font-size:24px}
+  .askbar .field{flex-direction:column}
+  .askbar .btn{width:100%}
+  .state{padding:34px 20px}
+}
+
+/* --- oldalsáv: színes akkordeon (az eredeti mintájára) --- */
+.acc{margin-bottom:26px}
+.acc-item + .acc-item{margin-top:2px}
+.acc-head{
+  width:100%; display:flex; align-items:center; gap:12px;
+  padding:15px 18px; color:#fff; text-align:left;
+  font-family:var(--slab); font-weight:700; font-size:16px; line-height:1.25;
+}
+.acc-head .fa-chevron-down{margin-left:auto; font-size:13px; transition:transform .18s ease}
+.acc-item.open .acc-head .fa-chevron-down{transform:rotate(180deg)}
+.acc-item:nth-child(1) .acc-head{background:var(--cat-1)}
+.acc-item:nth-child(2) .acc-head{background:var(--cat-2)}
+.acc-item:nth-child(3) .acc-head{background:var(--cat-3)}
+.acc-item:nth-child(4) .acc-head{background:var(--cat-4)}
+.acc-item:nth-child(5) .acc-head{background:var(--cat-5)}
+.acc-item:nth-child(6) .acc-head{background:var(--cat-6)}
+.acc-body{display:none; border:1px solid var(--line); border-top:0; padding:12px 18px 14px; background:#fff}
+.acc-item.open .acc-body{display:block}
+.acc-body ul{list-style:none; margin:0; padding:0}
+.acc-body li{padding:5px 0; font-size:13px; color:var(--ink-soft); display:flex; gap:9px}
+.acc-body li .cnt{margin-left:auto; color:var(--ink-faint); font-size:12px; font-variant-numeric:tabular-nums}
+.lock{color:#fff; font-size:11px; opacity:.85}
+
+/* --- oldalsáv-widget (az "ESEMÉNYEK" blokk helyén) --- */
+.widget{margin-bottom:26px}
+.widget-title{
+  font-family:var(--slab); font-weight:700; font-size:19px; text-transform:uppercase;
+  color:var(--ink-soft); text-align:center; letter-spacing:.5px; margin-bottom:14px;
+}
+.widget-box{background:var(--bg-soft); border:1px solid var(--line); padding:16px 18px}
+.chamber-select{width:100%; height:38px; padding:0 10px; border:1px solid var(--line); background:#fff; border-radius:2px; font-size:13px}
+.chamber-select:focus{outline:2px solid var(--mkik-green); outline-offset:-1px}
+.chamber-full{margin-top:8px; font-size:12px; line-height:1.45; color:var(--ink-soft)}
+.stat-row{display:flex; justify-content:space-between; gap:12px; padding:7px 0; font-size:13px; border-bottom:1px solid var(--line-soft)}
+.stat-row:last-child{border-bottom:0}
+.stat-row span{color:var(--ink-soft)}
+.stat-row b{font-weight:600; font-variant-numeric:tabular-nums}
+.pending{color:var(--ink-faint); font-style:italic; font-weight:400}
+
+/* ============================================================
+   TARTALOM-ELEMEK
+   ============================================================ */
+.view{display:none}
+.view.active{display:block}
+.lead{font-size:15px; color:var(--ink-soft); margin:0 0 22px; max-width:65ch}
+
+.askbar{border:1px solid var(--line); background:var(--bg-soft-2); padding:18px}
+.askbar label{display:block; font-family:var(--cond); text-transform:uppercase; font-size:12px; letter-spacing:.6px; color:var(--ink-soft); margin-bottom:7px}
+.askbar .field{display:flex; gap:10px}
+.askbar input{
+  flex:1; height:44px; padding:0 14px; border:1px solid var(--line);
+  border-radius:2px; background:#fff; font-size:15px;
+}
+.askbar input:focus{outline:2px solid var(--mkik-green); outline-offset:-1px}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  height:44px; padding:0 22px; border-radius:2px;
+  font-family:var(--cond); font-weight:700; text-transform:uppercase; font-size:14px; letter-spacing:.4px;
+}
+.btn-primary{background:var(--mkik-green); color:#fff}
+.btn-primary:hover{background:var(--mkik-green-dark); text-decoration:none}
+.btn-primary:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.45; cursor:not-allowed}
+.askbar .helper{margin-top:9px; font-size:12.5px; color:var(--ink-faint)}
+
+/* állapotok */
+.state{border:1px solid var(--line); background:#fff; padding:46px 30px; text-align:center; margin-top:18px}
+.state .ico{font-size:26px; color:#CFD5D8; margin-bottom:14px}
+.state h4{font-family:var(--slab); font-size:17px; color:var(--ink-soft); margin-bottom:8px}
+.state p{margin:0 auto; max-width:52ch; font-size:13.5px; color:var(--ink-faint)}
+.state.error{border-color:#E4C4C4; background:#FCF6F6}
+.state.error .ico, .state.error h4{color:var(--mkik-red)}
+.skel{height:12px; background:linear-gradient(90deg,#EFF1F2 25%,#F7F8F9 37%,#EFF1F2 63%); background-size:400% 100%; animation:sh 1.3s ease infinite; border-radius:2px}
+@keyframes sh{0%{background-position:100% 50%}100%{background-position:0 50%}}
+.skel + .skel{margin-top:9px}
+
+.note{border-left:3px solid var(--mkik-cta); background:var(--bg-soft); padding:13px 16px; font-size:13.5px; color:var(--ink-soft); margin-top:18px}
+
+/* ============================================================
+   LÁBLÉC
+   ============================================================ */
+footer{background:var(--mkik-footer); color:#fff; padding:26px 0 27px; margin-top:10px}
+footer .row{display:flex; gap:30px; align-items:flex-start; flex-wrap:wrap}
+footer .left{flex:0 0 300px}
+footer .logo-white img{width:165px; height:79px; filter:grayscale(1) brightness(100)}
+footer .copyright{margin-top:10px; font-size:12px; color:#fff}
+footer .copyright a{color:#fff; text-decoration:underline}
+footer .right{flex:1; display:flex; justify-content:flex-end}
+footer ul{list-style:none; margin:0; padding:0; text-align:right}
+footer li{margin-bottom:7px}
+footer li a{color:#fff; font-family:var(--cond); font-size:13.5px}
+@media (max-width:900px){
+  footer .row{flex-direction:column}
+  footer .right{justify-content:flex-start}
+  footer ul{text-align:left}
+}
+
+/* ---------- válaszdoboz ---------- */
+.ansbox{border:1px solid var(--line); background:#fff; margin-top:18px}
+.verdict{display:flex; align-items:center; gap:9px; padding:11px 18px; border-bottom:1px solid var(--line);
+  font-family:var(--cond); font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.6px}
+.verdict.ok{color:#1F7A4D; background:#F1F8F4}
+.verdict.no{color:var(--mkik-red); background:#FCF6F6}
+.verdict .dot{width:8px; height:8px; border-radius:50%; background:currentColor; flex:0 0 8px}
+.ansbody{padding:6px 18px 16px}
+.claim{padding:15px 0; border-bottom:1px dashed var(--line)}
+.claim:last-of-type{border-bottom:0}
+.quote{border-left:3px solid var(--mkik-cta); padding:3px 0 3px 14px; font-size:15px; line-height:1.62; color:var(--ink)}
+.quote mark{background:#FBF0CE; padding:0 1px; border-radius:2px}
+.srcline{margin-top:11px; display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+.srcbtn{display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line); background:var(--bg-soft-2);
+  border-radius:2px; padding:7px 12px; font-size:13px; color:var(--mkik-green); font-weight:600; text-align:left}
+.srcbtn:hover{border-color:var(--mkik-green); background:#fff}
+.srcbtn .pg{color:var(--ink-faint); font-weight:400}
+.meta{font-size:11.5px; color:var(--ink-faint)}
+.costline{margin-top:14px; padding-top:12px; border-top:1px solid var(--line-soft); font-size:12.5px; color:var(--ink-soft)}
+.costline .conf{float:right; color:var(--ink-faint)}
+.nocov-lead{margin:14px 0 12px; font-size:14.5px}
+.nocov-why{background:var(--bg-soft); border-left:3px solid var(--mkik-red); padding:12px 15px; font-size:13.5px; color:var(--ink-soft)}
+
+/* ---------- példa-kérdések ---------- */
+.hint{margin-top:11px; display:flex; gap:7px; flex-wrap:wrap; align-items:center}
+.hint em{font-style:normal; color:var(--ink-faint); font-size:12px; margin-right:2px}
+.chip{border:1px solid var(--line); background:#fff; border-radius:2px; padding:6px 11px; font-size:12.5px; color:var(--ink-soft)}
+.chip:hover{border-color:var(--mkik-green); color:var(--mkik-green)}
+.chip.risk{border-color:#E4C4C4; color:var(--mkik-red); background:#FCF9F9}
+
+/* ---------- táblázatok ---------- */
+.tablewrap{border:1px solid var(--line); background:#fff; overflow-x:auto}
+table{width:100%; border-collapse:collapse; font-size:13.5px}
+th{text-align:left; font-family:var(--cond); font-size:11.5px; text-transform:uppercase; letter-spacing:.5px;
+  color:var(--ink-soft); font-weight:700; padding:11px 14px; border-bottom:1px solid var(--line); white-space:nowrap; background:var(--bg-soft-2)}
+td{padding:11px 14px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+tr:last-child td{border-bottom:0}
+th.num,td.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+.sub2{display:block; font-size:11.5px; color:var(--ink-faint)}
+.muted{color:var(--ink-faint)}
+.tag{display:inline-block; font-size:11px; font-weight:700; font-family:var(--cond); text-transform:uppercase;
+  letter-spacing:.4px; padding:3px 8px; border-radius:2px; white-space:nowrap}
+.t-ok{background:#EAF5EF; color:#1F7A4D}
+.t-no{background:#FBEEEF; color:var(--mkik-red)}
+
+/* ---------- mérőszám-kártyák ---------- */
+.stats{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:18px}
+@media (max-width:700px){.stats{grid-template-columns:1fr}}
+.statcard{border:1px solid var(--line); background:#fff; padding:16px 18px}
+.statcard .big{font-family:var(--slab); font-weight:700; font-size:26px; color:var(--mkik-green); font-variant-numeric:tabular-nums}
+.statcard .sub{font-size:12px; color:var(--ink-faint); margin-top:3px}
+
+/* ---------- költségkalkulátor ---------- */
+.calc{border:1px solid var(--line); background:#fff; padding:18px}
+.calcfield{display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--line-soft)}
+.calcfield:last-child{border-bottom:0}
+.calcfield label{flex:1; font-size:13.5px; color:var(--ink-soft)}
+.calcfield input{width:110px; height:34px; padding:0 10px; border:1px solid var(--line); border-radius:2px;
+  text-align:right; font-variant-numeric:tabular-nums}
+.calcfield input:focus{outline:2px solid var(--mkik-green); outline-offset:-1px}
+.calcout{margin-top:16px; border-top:2px solid var(--line); padding-top:12px}
+.calcout .row2{display:flex; justify-content:space-between; padding:6px 0; font-size:13.5px}
+.calcout .row2 b{font-variant-numeric:tabular-nums}
+.calcout .row2.total{border-top:1px solid var(--line); margin-top:6px; padding-top:10px; font-size:15px}
+.calcout .row2.total b{color:var(--mkik-green); font-family:var(--slab)}
+
+/* ---------- forrásnézet ---------- */
+.ov{position:fixed; inset:0; background:rgba(15,37,44,.45); display:none; align-items:center; justify-content:center; padding:24px; z-index:50}
+.ov.on{display:flex}
+.sheet{background:#fff; width:min(860px,100%); max-height:86vh; display:flex; flex-direction:column; overflow:hidden;
+  box-shadow:0 22px 60px rgba(0,0,0,.3)}
+.sheet header{padding:15px 20px; border-bottom:1px solid var(--line); display:flex; align-items:flex-start; gap:14px; background:var(--bg-soft-2)}
+.sheet header h4{font-size:16px}
+.sheet header .m{font-size:12px; color:var(--ink-faint); margin-top:4px}
+.sheet header .x{margin-left:auto; font-size:24px; line-height:1; color:var(--ink-faint); padding:0 4px}
+.sheet .body{padding:20px; overflow:auto; background:var(--bg-soft-2)}
+.pagebox{background:#fff; border:1px solid var(--line); padding:22px 24px; font-size:14px; line-height:1.72}
+.pagebox .hit{background:#FBF0CE; box-shadow:-3px 0 0 var(--mkik-cta); padding:2px 0 2px 8px}
+.pagerest{margin-top:16px; padding-top:14px; border-top:1px solid var(--line-soft); color:var(--ink-soft)}
+.badge{font-family:var(--cond); font-size:11.5px; font-weight:700; background:rgba(255,255,255,.28);
+  padding:1px 7px; border-radius:2px; margin-left:auto}
+.acc-head .fa-chevron-down{margin-left:10px}
+.skel.w80{width:80%} .skel.w60{width:60%}
+
+</style>
+</head>
+<body>
+
+<!-- ==================== FEJLÉC ==================== -->
+<header>
+  <div class="container">
+    <div class="top-bar">
+      <a class="logo" href="https://mkik.hu" title="Magyar Kereskedelmi és Iparkamara">
+        <img src="assets/mkik-logo.png" alt="Magyar Kereskedelmi és Iparkamara">
+      </a>
+
+      <div class="searchbox">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <label class="sr-only" for="globalSearch">Keresés az oldalon</label>
+        <input id="globalSearch" type="search" placeholder="Keresés">
+      </div>
+
+      <div class="top-tools">
+        <button class="tool-btn aa" title="Betűméret növelése" aria-label="Betűméret növelése">aA</button>
+        <button class="tool-btn" title="Kontraszt váltása" aria-label="Kontraszt váltása"><i class="fa-solid fa-circle-half-stroke"></i></button>
+        <div class="tool-sep" aria-hidden="true"></div>
+        <span class="lang-pill">HU</span>
+        <div class="tool-sep" aria-hidden="true"></div>
+        <div class="user-chip">
+          <div class="av" id="userInitials">KA</div>
+          <div class="who">
+            <b id="userName">Kovács Anna</b>
+            <span id="userRole">ügyintéző</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="mainmenu" aria-label="Fő navigáció">
+      <a href="#" class="active" data-view="ask">Kérdezés</a>
+      <a href="#" data-view="docs">Dokumentumok</a>
+      <a href="#" data-view="gaps">Hiánylista</a>
+      <a href="#" data-view="log">Napló</a>
+      <a href="#" data-view="cost">Költség</a>
+      <span class="div" aria-hidden="true"></span>
+      <a href="#" data-view="admin" class="flag">Admin</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ==================== ALOLDAL-FEJ ==================== -->
+<div class="container pagehead">
+  <div class="inner">
+    <h1 id="pageTitle">Kamarai Tudástár</h1>
+    <div class="crumbs">
+      <a href="https://mkik.hu" aria-label="Kezdőlap"><i class="fa-solid fa-house"></i></a>
+      <span class="sep">|</span><a href="#">belső rendszerek</a>
+      <span class="sep">|</span><span id="crumbLeaf">kamarai tudástár</span>
+    </div>
+  </div>
+  <hr>
+</div>
+
+<!-- ==================== TÖRZS ==================== -->
+<div class="container">
+  <div class="body-row">
+
+    <!-- ---------- OLDALSÁV ---------- -->
+    <aside class="sidebar">
+      <div class="widget">
+        <div class="widget-title">Kamara</div>
+        <div class="widget-box">
+          <label class="sr-only" for="chamber">Kamara kiválasztása</label>
+          <select class="chamber-select" id="chamber"></select>
+          <div class="chamber-full" id="chamberFull"></div>
+          <div class="stat-row" style="margin-top:12px">
+            <span>Betöltött dokumentum</span><b class="pending" id="statDocs">-</b>
+          </div>
+          <div class="stat-row">
+            <span>Utolsó frissítés</span><b class="pending" id="statSync">-</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="acc" id="acc"></div>
+
+      <div class="widget">
+        <div class="widget-title">Rendszer</div>
+        <div class="widget-box">
+          <div class="stat-row"><span>Válaszmód</span><b id="stateMode">idézetes</b></div>
+          <div class="stat-row"><span>Nyelvi modell</span><b class="pending" id="stateLlm">nincs bekötve</b></div>
+          <div class="stat-row"><span>Hangasszisztens</span><b class="pending" id="stateVoice">nincs bekötve</b></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ---------- TARTALOM ---------- -->
+    <main class="content">
+
+      <!-- KÉRDEZÉS -->
+      <section class="view active" id="v-ask">
+        <p class="lead">Kérdezz a kamara hatályos belső dokumentumaiból. A rendszer csak a betöltött szabályzatokból válaszol, és minden állításhoz megmutatja a forrást: dokumentum, oldal, szó szerinti részlet.</p>
+        <div class="askbar">
+          <label for="q">Kérdés</label>
+          <div class="field">
+            <input id="q" type="text" placeholder="Például: ki hagyhat jóvá 500 000 Ft feletti beszerzést?" autocomplete="off">
+            <button class="btn btn-primary" id="askBtn" disabled>Keresés</button>
+          </div>
+          <div class="hint" id="samples"></div>
+        </div>
+        <div id="ans">
+          <div class="state">
+            <div class="ico"><i class="fa-regular fa-file-lines"></i></div>
+            <h4>Tegyél fel egy kérdést</h4>
+            <p>A rendszer csak a betöltött szabályzatokból válaszol. Ha nincs fedezet, azt mondja meg.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- DOKUMENTUMOK -->
+      <section class="view" id="v-docs">
+        <p class="lead">A dokumentumállomány kamaránként külön kezelhető, cserélhető és bővíthető. A verzió és a hatálybalépés minden válaszban látszik, elavult forrásra a rendszer figyelmeztet.</p>
+        <div class="tablewrap" id="docsBody"></div>
+        <p class="meta" id="docsNote" style="margin-top:10px"></p>
+      </section>
+
+      <!-- HIÁNYLISTA -->
+      <section class="view" id="v-gaps">
+        <p class="lead">Amire a rendszer nem talál fedezetet, az nem hiba, hanem adat: megmutatja, hol hiányos vagy nem megtalálható a belső szabályozás. Ez a kimutatás a vezetőségnek szól.</p>
+        <div class="stats">
+          <div class="statcard"><div class="big" id="gapCnt">0</div><div class="sub">fedezet nélküli kérdés</div></div>
+          <div class="statcard"><div class="big" id="gapRate">0%</div><div class="sub">a kérdések arányában</div></div>
+          <div class="statcard"><div class="big" id="gapTotal">0</div><div class="sub">összes lekérdezés</div></div>
+        </div>
+        <div class="tablewrap" id="gapBody"></div>
+      </section>
+
+      <!-- NAPLÓ -->
+      <section class="view" id="v-log">
+        <p class="lead">Belső rendszernél a nyomon követhetőség nem extra. Minden kérdés, a hozzá tartozó szerepkör, a kiadott forrás és a döntés naplózva van, visszakereshetően.</p>
+        <div class="tablewrap" id="logBody"></div>
+      </section>
+
+      <!-- KÖLTSÉG -->
+      <section class="view" id="v-cost">
+        <p class="lead">A költség nem becslés, hanem mért érték. A visszakeresés determinisztikus és ingyenes; fizetni csak a válasz megfogalmazásáért kell, és ha nincs fedezet, a nyelvi modell el sem indul.</p>
+        <div class="stats">
+          <div class="statcard"><div class="big" id="cPer">0 Ft</div><div class="sub">mért költség / kérdés</div></div>
+          <div class="statcard"><div class="big" id="cFree">-</div><div class="sub">nyelvi modell nélkül lezárva</div></div>
+          <div class="statcard"><div class="big" id="cQ">0</div><div class="sub">eddigi lekérdezés</div></div>
+        </div>
+        <div class="calc">
+          <div class="calcfield"><label for="mStaff">Kamarai munkatársak száma</label><input id="mStaff" type="number" min="1" value="850"></div>
+          <div class="calcfield"><label for="mPerDay">Kérdés / munkatárs / nap</label><input id="mPerDay" type="number" min="0" step="0.1" value="1.2"></div>
+          <div class="calcfield"><label for="mInfra">Havi infrastruktúra (tárhely, adatbázis)</label><input id="mInfra" type="number" min="0" value="35000"></div>
+          <div class="calcfield"><label for="mShare">Megfogalmazó réteget igénylő kérdés (%)</label><input id="mShare" type="number" min="0" max="100" value="60"></div>
+          <div class="calcfield"><label for="mLlm">Nyelvi modell ára / kérdés (Ft)</label><input id="mLlm" type="number" min="0" step="0.5" value="4"></div>
+          <div class="calcout">
+            <div class="row2"><span>Havi kérdésszám (21 munkanap)</span><b id="oQ">-</b></div>
+            <div class="row2"><span>Infrastruktúra</span><b id="oInfra">-</b></div>
+            <div class="row2"><span>Nyelvi modell</span><b id="oLlm">-</b></div>
+            <div class="row2 total"><span>Havi üzemeltetés összesen</span><b id="oTotal">-</b></div>
+            <div class="row2"><span>Ebből egy kérdés</span><b id="oPer">-</b></div>
+          </div>
+        </div>
+        <div class="note">A visszakeresés a böngészőben fut, ezért kérdésenként nem keletkezik változó költség. Fizetni csak a megfogalmazó rétegért kell, és fedezet hiányában az el sem indul. A dokumentumállomány betöltése egyszeri, indexeléskori művelet.</div>
+      </section>
+
+      <!-- ADMIN -->
+      <section class="view" id="v-admin">
+        <p class="lead">Az admin felület minden kamara dokumentumállományához hozzáfér: feltöltés, csere, verziózás, jogosultsági körök és újraindexelés.</p>
+        <div class="state">
+          <div class="ico"><i class="fa-solid fa-sliders"></i></div>
+          <h4>Az admin felület a következő körben épül</h4>
+          <p>A váz készen áll: kamara-, dokumentum- és jogosultságkezelés kerül ide.</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ==================== LÁBLÉC ==================== -->
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="left">
+        <a class="logo-white" href="https://mkik.hu" title="Magyar Kereskedelmi és Iparkamara">
+          <img src="assets/mkik-logo.png" alt="Magyar Kereskedelmi és Iparkamara">
+        </a>
+        <div class="copyright">
+          Copyright &copy; 2018 - 2026 MKIK. | Belső rendszer, kamarai munkatársak részére.
+        </div>
+      </div>
+      <div class="right">
+        <ul>
+          <li><a href="https://mkik.hu/adatkezelesi-tajekoztato">Adatkezelési tájékoztató</a></li>
+          <li><a href="https://mkik.hu/suti-szabalyzat">Süti szabályzat</a></li>
+          <li><a href="#">Akadálymentesítési nyilatkozat</a></li>
+          <li><a href="https://kavir.mkik.hu/" target="_blank" rel="noopener">Kamarai Vállalkozói Információs Rendszer</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="ov" id="ov" role="dialog" aria-modal="true" aria-labelledby="ovT"><div class="sheet">
+  <header>
+    <div><h4 id="ovT">Dokumentum</h4><div class="m" id="ovM"></div></div>
+    <button class="x" id="ovX" aria-label="Bezárás">&times;</button>
+  </header>
+  <div class="body" id="ovB"></div>
+</div></div>
+
+<script src="data/kb.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
