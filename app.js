@@ -1080,12 +1080,20 @@ function bindMic(){
 }
 
 function reflectConfig(){
+  /* A rendszerállapot-blokk kikerült az oldalsávból; ha nincs a lapon,
+     ez a rész csendben kimarad, a többi működik tovább. */
   var llm = document.getElementById("stateLlm"), voice = document.getElementById("stateVoice");
   var mode = document.getElementById("stateMode");
-  if (CONFIG.LLM_ENDPOINT){ llm.textContent = "bekötve"; llm.className = ""; mode.textContent = "idézetes + megfogalmazó"; }
-  if (CONFIG.VOICE_ENDPOINT){ voice.textContent = "bekötve"; voice.className = ""; }
-  else if (window.VoiceWidget && window.VoiceWidget.isSupported()){ voice.textContent = "bekötve (böngésző)"; voice.className = ""; }
-  document.getElementById("askBtn").disabled = !(window.KB && window.KB.chunks && window.KB.chunks.length);
+  if (llm && CONFIG.LLM_ENDPOINT){ llm.textContent = "bekötve"; llm.className = ""; }
+  if (mode && CONFIG.LLM_ENDPOINT){ mode.textContent = "idézetes + megfogalmazó"; }
+  if (voice){
+    if (CONFIG.VOICE_ENDPOINT){ voice.textContent = "bekötve"; voice.className = ""; }
+    else if (window.VoiceWidget && window.VoiceWidget.isSupported()){
+      voice.textContent = "bekötve (böngésző)"; voice.className = "";
+    }
+  }
+  var ab = document.getElementById("askBtn");
+  if (ab) ab.disabled = !(window.KB && window.KB.chunks && window.KB.chunks.length);
 }
 
 function renderAccount(){
