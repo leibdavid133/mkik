@@ -16,6 +16,11 @@ var CONFIG = {
    ez alatt kimondja, hogy nincs fedezet. Inkább legyen szigorú. */
 var GATE = { minScore: 3.2, minCoverage: 0.5, minTerms: 2 };
 
+/* Ha a kérdés mennyiségre irányul, a számot tartalmazó rendelkezés a jó válasz,
+   nem az, amelyik csak megemlíti a fogalmat. */
+var QTY_RX = /\b(mennyi|mennyit|mennyire|h[áa]ny|h[áa]nyszor|meddig|mekkora|milyen hossz|mikorra|h[áa]ny nap|milyen [ée]rt[ée]k)/i;
+var NUM_RX = /\d|\b(egy|k[ée]t|kett[őo]|h[áa]rom|n[ée]gy|[öo]t|hat|h[ée]t|nyolc|kilenc|t[íi]z|tizen|h[úu]sz|harminc|negyven|[öo]tven)\b/i;
+
 var CHAMBERS = [
   { short:"MKIK (országos)",            full:"Magyar Kereskedelmi és Iparkamara" },
   { short:"Bács-Kiskun VKIK",           full:"Bács-Kiskun Vármegyei Kereskedelmi és Iparkamara" },
@@ -159,7 +164,7 @@ function buildIndex(){
   for (var i = 0; i < chunks.length; i++){
     var c = chunks[i];
     /* a szakaszcím is indexelődik: sok kérdés a § címére illeszkedik */
-    var tf = {}, ts = tokens(c.t + " " + (c.s || "")), seen = {};
+    var tf = {}, ts = tokens(c.t + " " + (c.s || "") + " " + (c.l || "")), seen = {};
     for (var j = 0; j < ts.length; j++){
       tf[ts[j]] = (tf[ts[j]] || 0) + 1;
       if (!seen[ts[j]]) { seen[ts[j]] = 1; IDX.df[ts[j]] = (IDX.df[ts[j]] || 0) + 1; }
@@ -184,6 +189,7 @@ function search(query){
   if (!uniq.length) return { hits: [], terms: [], amounts: [], coverage: 0, best: 0 };
 
   var amounts = parseAmounts(query);
+  var qtyQuestion = QTY_RX.test(query);
 
   /* Minden kérdés-szóhoz összegyűjtjük a szótár illeszkedő alakjait,
      és a csoportot egyetlen keresőkifejezésként kezeljük. */
@@ -241,6 +247,7 @@ function search(query){
         }
       }
     }
+    if (score > 0 && qtyQuestion && NUM_RX.test(ent.c.t)) score += 1.4;
     if (score > 0) scored.push({ e: ent, score: score, matched: matched, idx: m });
   }
 
@@ -323,6 +330,7 @@ function renderAnswer(query, r){
     var c = top[i].e.c, d = docOf(c.d);
     html +=
       '<div class="claim">' +
+        (c.l ? '<div class="leadctx">' + esc(c.l) + '</div>' : "") +
         '<div class="quote">' + highlight(c.t, r.terms) + '</div>' +
         '<div class="srcline">' +
           '<button class="srcbtn" data-chunk="' + c.i + '">' +

@@ -100,6 +100,7 @@ def parse_range(cell):
 
 # ---------------------------------------------------------------- feldolgozás
 SEC_RX = re.compile(r"^(\d+)\.\s*§\s+(.+)$")
+ITEM_RX = re.compile(r"^([1-9]|1\d|20)\.\s+(?=[a-záéíóöőúüű])")   # "4. az ajánlattételi határidő..."
 
 def is_section(line):
     """Valódi paragrafuscím, nem tartalomjegyzék-sor."""
@@ -201,27 +202,42 @@ def process(path, meta):
         pages.append(" ".join(raw_lines))
 
         buf = []
+        lead = None      # a felsorolást bevezető mondat ("... kötelező tartalmi elemei:")
+        kind = "para"
+
         def flush():
-            nonlocal buf, n
+            nonlocal buf, n, lead, kind
             if not buf:
                 return
             text = re.sub(r"\s+", " ", " ".join(buf)).strip()
             buf = []
+            k, l = kind, lead
+            kind = "para"
+            # A bevezető mondatot akkor is meg kell jegyezni, ha maga túl rövid
+            # ahhoz, hogy önálló találat legyen ("(1) Ajánlatkérés mellőzhető, ha").
+            if k == "para":
+                lead = text[:190]
             if len(text) < 40 or is_junk(text):   # cím, címlap vagy tartalomjegyzék
                 return
             n += 1
-            chunks.append({"i": n, "d": meta["id"], "p": pageno, "s": section,
-                           "t": text, "k": "para"})
+            ch = {"i": n, "d": meta["id"], "p": pageno, "s": section, "t": text, "k": k}
+            if k == "item" and l:
+                ch["l"] = l                        # a pont önmagában értelmezhető legyen
+            chunks.append(ch)
 
         for ln in raw_lines:
             sec = is_section(ln)
             if sec:                        # új paragrafus kezdődik
                 flush()
+                lead = None
                 section = sec
                 continue
-            # bekezdés-kezdet: (1), 1., a) vagy nagybetűs mondatkezdet hosszabb blokk után
-            if re.match(r"^\(\d+\)", ln) and buf:
+            if re.match(r"^\(\d+\)", ln) and buf:      # új bekezdés
                 flush()
+                lead = None
+            elif ITEM_RX.match(ln) and len(ln) >= 25:   # számozott felsorolás-pont
+                flush()
+                kind = "item"
             buf.append(ln)
         flush()
 
