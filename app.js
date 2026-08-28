@@ -869,6 +869,63 @@ function bindNav(){
   for (var k = 0; k < inputs.length; k++){
     inputs[k].addEventListener("input", calcMonthly);
   }
+  bindMic();
+}
+
+/* Diktálás a kérdésmezőbe (Web Speech API, ld. voice-widget.js). A hang a
+   böngésző szerverére megy felismerésre — ez tudatos, dokumentált
+   kompromisszum a sebesség/pontosság érdekében, nem "100%-ban helyben
+   marad" megoldás. */
+function bindMic(){
+  var micBtn = document.getElementById("micBtn");
+  var micStatus = document.getElementById("micStatus");
+  if (!micBtn) return;
+
+  if (!window.VoiceWidget || !window.VoiceWidget.isSupported()){
+    micBtn.disabled = true;
+    micBtn.title = "Ez a böngésző nem támogatja a hangfelismerést";
+    return;
+  }
+
+  var recording = false;
+
+  function onUnexpectedEnd(){
+    // A böngésző csendre magától leállította a hallgatást, mielőtt a
+    // felhasználó rákattintott volna a leállításra — a gomb ne ragadjon
+    // "felvétel" állapotban.
+    recording = false;
+    micBtn.classList.remove("recording");
+  }
+
+  micBtn.addEventListener("click", function(){
+    micStatus.hidden = true;
+
+    if (!recording){
+      window.VoiceWidget.startRecording(onUnexpectedEnd).then(function(){
+        recording = true;
+        micBtn.classList.add("recording");
+      }).catch(function(err){
+        recording = false;
+        micBtn.classList.remove("recording");
+        micStatus.textContent = err.message || "Nem sikerült elérni a mikrofont.";
+        micStatus.hidden = false;
+      });
+      return;
+    }
+
+    recording = false;
+    micBtn.classList.remove("recording");
+    micBtn.disabled = true;
+    window.VoiceWidget.stopAndTranscribe().then(function(text){
+      document.getElementById("q").value = text;
+      ask();
+    }).catch(function(err){
+      micStatus.textContent = err.message || "Nem sikerült felismerni a beszédet.";
+      micStatus.hidden = false;
+    }).then(function(){
+      micBtn.disabled = false;
+    });
+  });
 }
 
 function reflectConfig(){
@@ -876,6 +933,7 @@ function reflectConfig(){
   var mode = document.getElementById("stateMode");
   if (CONFIG.LLM_ENDPOINT){ llm.textContent = "bekötve"; llm.className = ""; mode.textContent = "idézetes + megfogalmazó"; }
   if (CONFIG.VOICE_ENDPOINT){ voice.textContent = "bekötve"; voice.className = ""; }
+  else if (window.VoiceWidget && window.VoiceWidget.isSupported()){ voice.textContent = "bekötve (böngésző)"; voice.className = ""; }
   document.getElementById("askBtn").disabled = !(window.KB && window.KB.chunks && window.KB.chunks.length);
 }
 
