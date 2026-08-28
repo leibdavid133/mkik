@@ -69,7 +69,8 @@
     </div>
 
     <nav class="mainmenu" aria-label="Fő navigáció">
-      <a href="#" class="active" data-view="ask"  data-i18n="nav_ask">Kérdezés</a>
+      <a href="#" class="active" data-view="megkeresesek" data-i18n="nav_megk">Megkeresések</a>
+      <a href="#" data-view="ask"  data-i18n="nav_ask">Kérdezés</a>
       <a href="#" data-view="docs" data-i18n="nav_docs">Dokumentumok</a>
       <a href="#" data-view="gaps" data-i18n="nav_gaps">Hiánylista</a>
       <a href="#" data-view="log"  data-i18n="nav_log">Előzmények</a>
@@ -82,11 +83,11 @@
 
 <div class="container pagehead">
   <div class="inner">
-    <h1 id="pageTitle">Kamarai Tudástár</h1>
+    <h1 id="pageTitle">Megkeresések</h1>
     <div class="crumbs">
       <a href="https://mkik.hu" aria-label="Kezdőlap"><i class="fa-solid fa-house"></i></a>
       <span class="sep">|</span><a href="#" data-i18n="crumb_sys">belső rendszerek</a>
-      <span class="sep">|</span><span id="crumbLeaf">kamarai tudástár</span>
+      <span class="sep">|</span><span id="crumbLeaf">megkeresések</span>
     </div>
   </div>
   <hr>
@@ -121,8 +122,13 @@
 
     <main class="content">
 
+      <!-- MEGKERESÉSEK -->
+      <section class="view active" id="v-megkeresesek">
+        <div id="megkeresesek"></div>
+      </section>
+
       <!-- KÉRDEZÉS -->
-      <section class="view active" id="v-ask">
+      <section class="view" id="v-ask">
         <p class="lead" data-i18n="ask_lead"></p>
         <div class="askhero">
           <div class="askfield">
@@ -292,5 +298,7 @@
 <script src="app.js"></script>
 <script src="backend.js"></script>
 <script src="enhance.js"></script>
+<script src="megkeresesek-bridge.js"></script>
+<script src="megkeresesek.js"></script>
 </body>
 </html>

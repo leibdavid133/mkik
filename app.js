@@ -35,6 +35,7 @@ var QTY_RX = /\b(mennyi|mennyit|mennyire|h[áa]ny|h[áa]nyszor|meddig|mekkora|mi
 var NUM_RX = /\d|\b(egy|k[ée]t|kett[őo]|h[áa]rom|n[ée]gy|[öo]t|hat|h[ée]t|nyolc|kilenc|t[íi]z|tizen|h[úu]sz|harminc|negyven|[öo]tven)\b/i;
 
 var VIEW_TITLES = {
+  megkeresesek: ["Megkeresések",   "megkeresések"],
   ask:     ["Kamarai Tudástár", "kamarai tudástár"],
   docs:    ["Dokumentumok",     "dokumentumok"],
   gaps:    ["Hiánylista",       "hiánylista"],
@@ -221,7 +222,7 @@ function synonymsFor(q){
   return null;
 }
 
-function search(query){
+function search(query, topN){
   var qt = tokens(query);
   var uniq = [], seen = {};
   for (var i = 0; i < qt.length; i++){ if (!seen[qt[i]]){ seen[qt[i]] = 1; uniq.push(qt[i]); } }
@@ -330,7 +331,7 @@ function search(query){
   }
 
   scored.sort(function(x, y){ return y.score - x.score; });
-  var top = scored.slice(0, 6);
+  var top = scored.slice(0, topN || 6);
 
   /* Fedezet idf-súlyozva: a ritka, tartalmas szó többet nyom a latban, mint
      a mindenhol előforduló ("kamara"). A korpuszban ismeretlen szó a legritkább,
@@ -386,6 +387,80 @@ function highlight(text, terms){
 
 function docOf(id){ return IDX.byDoc[id] || { title: "ismeretlen dokumentum", pages: 0 }; }
 
+/* ---------------------------------------------------------------- válaszfogalmazás
+   A találatból egy-két mondatos, olvasható választ állítunk elő. Új tényt
+   nem teszünk hozzá: a táblázatsornál a sor saját mezőit fogalmazzuk mondattá,
+   folyó szövegnél a kérdéshez legjobban illeszkedő mondatot emeljük ki.
+   A szó szerinti részlet ettől függetlenül ott marad alatta, ellenőrizhetően. */
+
+function mondatokra(t){
+  var tiszta = t.replace(/^\(\d+\)\s*/, "").replace(/^\d+\.\s*/, "");
+  /* Csak ott vágunk, ahol kisbetű vagy zárójel után jön pont és nagybetű -
+     így a "9. §" és a "2000. évi" hivatkozás nem tör ketté. */
+  var m = tiszta.split(/(?<=[a-záéíóöőúüű)”])[.;]\s+(?=[A-ZÁÉÍÓÖŐÚÜŰ(])/)
+                .filter(function(x){ return x.trim().length > 20; });
+  return m.length ? m : [tiszta];
+}
+
+/* A táblázatsor "Kulcs: érték · Kulcs: érték" alakú - ezt bontjuk mezőkre. */
+function tablaMezok(t){
+  var out = {};
+  t.split(" · ").forEach(function(resz){
+    var i = resz.indexOf(":");
+    if (i > 0) out[resz.slice(0, i).trim().toLowerCase()] = resz.slice(i + 1).trim();
+  });
+  return out;
+}
+
+function valaszSzoveg(chunk, r){
+  if (chunk.k === "table"){
+    var mez = tablaMezok(chunk.t);
+    var kat = mez["kat."] || mez["kategória"] || null;
+    var hatar = mez["nettó becsült érték"] || null;
+    var reszek = [];
+    if (r.amounts && r.amounts.length && hatar){
+      reszek.push("A megadott " + forint(r.amounts[0]) + " a " +
+        (kat ? kat + " " : "") + "kategóriába esik (" + hatar + ").");
+    } else if (kat && hatar){
+      reszek.push("A " + kat + " kategória értékhatára: " + hatar + ".");
+    }
+    var masodik = [];
+    if (mez["jóváhagyó"])        masodik.push("a jóváhagyó " + mez["jóváhagyó"]);
+    if (mez["minimális eljárás"]) masodik.push("a minimális eljárás: " + mez["minimális eljárás"].toLowerCase());
+    if (mez["kötelező dokumentum"]) masodik.push("a kötelező dokumentum: " + mez["kötelező dokumentum"].toLowerCase());
+    if (!reszek.length && !masodik.length){
+      /* Kétoszlopos táblázat (pl. "Követelmény / Előírás"): az első oszlop a
+         tárgy, a második a rendelkezés. */
+      var kulcsok2 = [];
+      for (var k in mez){ if (mez.hasOwnProperty(k)) kulcsok2.push(k); }
+      if (kulcsok2.length === 2){
+        return mez[kulcsok2[0]] + " — a szabályzat előírása: " + mez[kulcsok2[1]] +
+               (/[.!?]$/.test(mez[kulcsok2[1]]) ? "" : ".");
+      }
+      for (var k2 = 0; k2 < kulcsok2.length; k2++){
+        masodik.push(kulcsok2[k2] + ": " + mez[kulcsok2[k2]]);
+      }
+    }
+    if (masodik.length) reszek.push("Ebben az esetben " + masodik.slice(0, 3).join(", ") + ".");
+    if (reszek.length) return reszek.join(" ");
+  }
+
+  /* folyó szöveg: a kérdéshez legjobban illeszkedő mondat */
+  var mondatok = mondatokra(chunk.t), legjobb = mondatok[0], pontMax = -1;
+  for (var i = 0; i < mondatok.length; i++){
+    var alsó = mondatok[i].toLowerCase(), pont = 0;
+    for (var j = 0; j < r.terms.length; j++){
+      var t2 = r.terms[j];
+      if (t2.length > 3 && alsó.indexOf(t2.slice(0, Math.min(5, t2.length))) >= 0) pont++;
+    }
+    if (/\d/.test(mondatok[i])) pont += 0.4;
+    if (pont > pontMax){ pontMax = pont; legjobb = mondatok[i]; }
+  }
+  legjobb = legjobb.trim().replace(/\s+/g, " ");
+  if (!/[.!?]$/.test(legjobb)) legjobb += ".";
+  return legjobb.charAt(0).toUpperCase() + legjobb.slice(1);
+}
+
 function renderAnswer(query, r){
   var box = document.getElementById("ans");
 
@@ -425,21 +500,37 @@ function renderAnswer(query, r){
         ? '<div class="weaknote">A rendszer talált kapcsolódó rendelkezést, de nem biztos, hogy ez válaszol a kérdésedre. Olvasd el a forrást, mielőtt továbbadod a választ.</div>'
         : "");
 
-  for (var i = 0; i < top.length; i++){
-    var c = top[i].e.c, d = docOf(c.d);
-    html +=
-      '<div class="claim">' +
-        (c.l ? '<div class="leadctx">' + esc(c.l) + '</div>' : "") +
-        '<div class="quote">' + highlight(c.t, r.terms) + '</div>' +
-        '<div class="srcline">' +
-          '<button class="srcbtn" data-chunk="' + c.i + '">' +
-            '<i class="fa-regular fa-file-lines"></i> ' + esc(d.title) +
-            '<span class="pg">' + esc(c.s || "") + " · " + c.p + ". oldal</span>" +
-          '</button>' +
-          '<span class="meta">' + esc(d.code) + " · v" + esc(d.version) +
-          " · hatályos " + esc(d.effective) + "</span>" +
-        '</div>' +
-      '</div>';
+  /* 1) megfogalmazott válasz, 2) alatta EGY szó szerinti idézet a forrással,
+     3) végül a további kapcsolódó szakaszok, tömören. */
+  var c0 = top[0].e.c, d0x = docOf(c0.d);
+  html +=
+    '<div class="answer">' + esc(valaszSzoveg(c0, r)) + '</div>' +
+    '<div class="answermeta">' +
+      '<i class="fa-regular fa-file-lines"></i> ' + esc(d0x.title) +
+      (c0.s ? ' · ' + esc(c0.s) : "") + ' · ' + c0.p + '. oldal' +
+      ' <span class="dim">' + esc(d0x.code) + ' · v' + esc(d0x.version) +
+      ' · hatályos ' + esc(d0x.effective) + '</span>' +
+    '</div>' +
+    '<div class="claim">' +
+      '<div class="quotelabel">Szó szerint a szabályzatból</div>' +
+      (c0.l ? '<div class="leadctx">' + esc(c0.l) + '</div>' : "") +
+      '<div class="quote">' + highlight(c0.t, r.terms) + '</div>' +
+      '<div class="srcline">' +
+        '<button class="srcbtn" data-chunk="' + c0.i + '">' +
+          '<i class="fa-solid fa-up-right-from-square"></i> Forrás megnyitása' +
+          '<span class="pg">' + esc(c0.s || "") + ' · ' + c0.p + '. oldal</span>' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+
+  if (top.length > 1){
+    html += '<div class="related"><span class="rlabel">Kapcsolódó szakaszok</span>';
+    for (var i = 1; i < top.length; i++){
+      var c = top[i].e.c, d = docOf(c.d);
+      html += '<button class="relbtn" data-chunk="' + c.i + '">' +
+              esc(d.title) + ' · ' + esc(c.s || "") + ' · ' + c.p + '. o.</button>';
+    }
+    html += '</div>';
   }
 
   html += blockedNote(r) +
@@ -450,7 +541,7 @@ function renderAnswer(query, r){
 
   box.innerHTML = html;
 
-  var btns = box.querySelectorAll(".srcbtn");
+  var btns = box.querySelectorAll(".srcbtn, .relbtn");
   for (var b = 0; b < btns.length; b++){
     btns[b].addEventListener("click", function(){
       openSource(parseInt(this.getAttribute("data-chunk"), 10));
