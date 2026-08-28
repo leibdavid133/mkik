@@ -1052,7 +1052,11 @@ function bindMic(){
     micStatus.hidden = true;
 
     if (!recording){
-      window.VoiceWidget.startRecording(onUnexpectedEnd).then(function(){
+      window.VoiceWidget.startRecording(onUnexpectedEnd, function(interimText){
+        // élő visszajelzés beszéd közben — azonnal látszik, ha a rendszer
+        // ténylegesen hallja, amit mondunk
+        document.getElementById("q").value = interimText;
+      }).then(function(){
         recording = true;
         micBtn.classList.add("recording");
       }).catch(function(err){

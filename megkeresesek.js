@@ -151,6 +151,7 @@
       '.megk-gomb-elsodleges:active{transform:translateY(1px);}',
       '.megk-gomb-diktalas.megk-diktal-aktiv{background:var(--mkik-red,#C63F3F);',
       '  border-color:var(--mkik-red,#C63F3F); color:#fff;}',
+      '.megk-diktal-status{margin-top:9px; font-size:.8rem; color:var(--mkik-red,#C63F3F);}',
       '.megk-select-minta{height:38px; padding:0 10px; border-radius:2px;',
       '  border:1px solid var(--megk-vonal); background:var(--megk-feher);',
       '  color:var(--megk-fg); font-size:.81rem; max-width:250px;}',
@@ -396,33 +397,73 @@
     gombsor.appendChild(diktalGomb);
     gombsor.appendChild(feldolgozGomb);
     beerkPanel.appendChild(gombsor);
+    var diktalStatus = el('p', 'megk-diktal-status', '');
+    diktalStatus.hidden = true;
+    beerkPanel.appendChild(diktalStatus);
     root.appendChild(beerkPanel);
 
     var eredmeny = el('div', 'megk-eredmeny');
     root.appendChild(eredmeny);
 
     // --- diktálás ---
+    // Minden hibaesetnek konkrét, magyar üzenete van — korábban a gomb
+    // csendben visszaállt "Diktálás" feliratra bármilyen hiba esetén
+    // (nincs mikrofon-engedély, csend, hálózati hiba), ami a felhasználó
+    // szemében megkülönböztethetetlen egy "nem működik" hibától.
+    var HANG_HIBA = {
+      'not-allowed': 'Nincs engedélyezve a mikrofon. Engedélyezd a böngésző címsorában, majd próbáld újra.',
+      'service-not-allowed': 'Nincs engedélyezve a mikrofon. Engedélyezd a böngésző címsorában, majd próbáld újra.',
+      'audio-capture': 'Nem található mikrofon ezen az eszközön.',
+      'network': 'A felismeréshez internetkapcsolat kell. Ellenőrizd a hálózatot, és próbáld újra.',
+      'aborted': 'A felvétel megszakadt. Próbáld újra.',
+      'no-speech': 'Nem hallottunk beszédet a felvételen. Próbáld közelebbről, hangosabban.'
+    };
+
+    function diktalHibaMutat(szoveg) {
+      diktalStatus.textContent = szoveg;
+      diktalStatus.hidden = false;
+    }
+
     var Felismero = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Felismero) {
       diktalGomb.style.display = 'none';
+      diktalHibaMutat('Ez a böngésző nem támogatja a hangfelismerést. Írd be inkább a szöveget kézzel.');
+      diktalStatus.hidden = false;
     } else {
       var felismero = null;
       var diktalFut = false;
       diktalGomb.addEventListener('click', function () {
+        diktalStatus.hidden = true;
+
         if (diktalFut) { if (felismero) felismero.stop(); return; }
         felismero = new Felismero();
         felismero.lang = 'hu-HU';
-        felismero.interimResults = false;
+        felismero.interimResults = true;
         felismero.maxAlternatives = 1;
+        var kapottEredmenyt = false;
+        // az alap-szöveg, ami előtte már a mezőben volt — az élő, még nem
+        // végleges felismert szöveg ehhez képest frissül, nem duplikálódik
+        var alapSzoveg = textarea.value;
         felismero.onstart = function () {
           diktalFut = true;
           diktalGomb.classList.add('megk-diktal-aktiv');
           diktalGomb.textContent = 'Felvétel — kattints a leállításhoz';
         };
         felismero.onresult = function (ev) {
-          var szoveg = '';
-          for (var i = 0; i < ev.results.length; i++) szoveg += ev.results[i][0].transcript;
-          textarea.value = (textarea.value ? textarea.value + ' ' : '') + szoveg;
+          var vegleges = '', pillanatnyi = '';
+          for (var i = ev.resultIndex; i < ev.results.length; i++) {
+            if (ev.results[i].isFinal) vegleges += ev.results[i][0].transcript;
+            else pillanatnyi += ev.results[i][0].transcript;
+          }
+          if (vegleges) {
+            kapottEredmenyt = true;
+            alapSzoveg = (alapSzoveg ? alapSzoveg + ' ' : '') + vegleges;
+            textarea.value = alapSzoveg;
+          } else if (pillanatnyi) {
+            // élő, még nem végleges előnézet — azonnal látszik, ha a
+            // felismerés ténylegesen hallja, amit mondunk
+            textarea.value = (alapSzoveg ? alapSzoveg + ' ' : '') + pillanatnyi;
+          }
           textarea.dispatchEvent(new Event('input'));
         };
         var vissza = function () {
@@ -430,9 +471,22 @@
           diktalGomb.classList.remove('megk-diktal-aktiv');
           diktalGomb.textContent = 'Diktálás';
         };
-        felismero.onerror = vissza;
-        felismero.onend = vissza;
-        try { felismero.start(); } catch (e) { vissza(); }
+        felismero.onerror = function (ev) {
+          diktalHibaMutat(HANG_HIBA[ev.error] || 'Nem sikerült felismerni a beszédet. Próbáld újra, vagy írd be a szöveget kézzel.');
+          vissza();
+        };
+        felismero.onend = function () {
+          if (!kapottEredmenyt && diktalFut) {
+            diktalHibaMutat(HANG_HIBA['no-speech']);
+          }
+          vissza();
+        };
+        try {
+          felismero.start();
+        } catch (e) {
+          diktalHibaMutat('Nem sikerült elindítani a hangfelismerést. Próbáld újra.');
+          vissza();
+        }
       });
     }
 

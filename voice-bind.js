@@ -45,7 +45,9 @@
       micStatus.hidden = true;
 
       if (!recording) {
-        window.VoiceWidget.startRecording(onUnexpectedEnd).then(function () {
+        window.VoiceWidget.startRecording(onUnexpectedEnd, function (interimText) {
+          document.getElementById("q").value = interimText;
+        }).then(function () {
           recording = true;
           micBtn.classList.add("recording");
         }).catch(function (err) {
