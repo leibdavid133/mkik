@@ -956,54 +956,11 @@ function buildSamples(){
 }
 
 /* ---------------------------------------------------------------- diktálás
-   A böngésző saját beszédfelismerőjével, magyar nyelvre állítva. Nem megy
-   külső szolgáltatáshoz külön kulcs nélkül, és ha a böngésző nem tudja,
-   a gomb egyszerűen eltűnik. */
-var felismero = null, diktalFut = false;
-
-function bindMic(){
-  var gomb = document.getElementById("micBtn");
-  var Felismero = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!gomb) return;
-  if (!Felismero){ gomb.style.display = "none"; return; }
-
-  gomb.addEventListener("click", function(){
-    if (diktalFut){ if (felismero) felismero.stop(); return; }
-    felismero = new Felismero();
-    felismero.lang = "hu-HU";
-    felismero.interimResults = true;
-    felismero.maxAlternatives = 1;
-
-    felismero.onstart = function(){
-      diktalFut = true;
-      gomb.classList.add("on");
-      gomb.setAttribute("title", "Felvétel — kattints a leállításhoz");
-      toast("Hallgatlak — mondd a kérdést.");
-    };
-    felismero.onresult = function(ev){
-      var szoveg = "", vegleges = false;
-      for (var i = 0; i < ev.results.length; i++){
-        szoveg += ev.results[i][0].transcript;
-        if (ev.results[i].isFinal) vegleges = true;
-      }
-      document.getElementById("q").value = szoveg;
-      if (vegleges){ felismero.stop(); window.setTimeout(ask, 250); }
-    };
-    var vissza = function(){
-      diktalFut = false;
-      gomb.classList.remove("on");
-      gomb.setAttribute("title", "Kérdés diktálása");
-    };
-    felismero.onerror = function(e){
-      vissza();
-      toast(e && e.error === "not-allowed"
-        ? "A mikrofon használatát a böngészőben engedélyezni kell."
-        : "A diktálás nem indult el, írd be a kérdést.");
-    };
-    felismero.onend = vissza;
-    try { felismero.start(); } catch (e) { vissza(); }
-  });
-}
+   A diktálást a voice-widget.js modul adja (PR #1), a bindMic() lentebb köti be.
+   Itt korábban egy második, beépített megvalósítás is állt; a kettő ugyanarra a
+   #micBtn gombra kötött volna, ezért kivettük. A modulos verzió maradt, mert
+   nevesített hibaüzeneteket ad (nincs mikrofon, nincs engedély, nincs hálózat),
+   és a hibát a felületen is kiírja a #micStatus mezőbe. */
 
 function ask(){
   var q = document.getElementById("q").value.trim();

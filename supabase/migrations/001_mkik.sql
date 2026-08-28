@@ -44,7 +44,7 @@ create index if not exists mkik_queries_norm_idx   on public.mkik_queries (q_nor
 create table if not exists public.mkik_notifications (
   id           bigserial primary key,
   sent_at      timestamptz not null default now(),
-  kind         text not null check (kind in ('gap','deprecate')),
+  kind         text not null check (kind in ('gap','deprecate','answer')),
   to_email     text not null,
   intended_to  text,                            -- éles rendszerben ide menne
   subject      text,
