@@ -16,54 +16,31 @@ var CONFIG = {
    ez alatt kimondja, hogy nincs fedezet. Inkább legyen szigorú. */
 var GATE = { minScore: 3.2, minCoverage: 0.5, minTerms: 2 };
 
+/* Az admin felületen mentett beállítások felülírják az alapértelmezést. */
+function loadSettings(){
+  try {
+    var s = JSON.parse(localStorage.getItem("mkik_kb_settings_v1") || "null");
+    if (!s) return;
+    if (typeof s.minScore === "number")    GATE.minScore = s.minScore;
+    if (typeof s.minCoverage === "number") GATE.minCoverage = s.minCoverage;
+    if (typeof s.minTerms === "number")    GATE.minTerms = s.minTerms;
+    if (s.llm)   CONFIG.LLM_ENDPOINT = s.llm;
+    if (s.voice) CONFIG.VOICE_ENDPOINT = s.voice;
+  } catch (e) {}
+}
+
 /* Ha a kérdés mennyiségre irányul, a számot tartalmazó rendelkezés a jó válasz,
    nem az, amelyik csak megemlíti a fogalmat. */
 var QTY_RX = /\b(mennyi|mennyit|mennyire|h[áa]ny|h[áa]nyszor|meddig|mekkora|milyen hossz|mikorra|h[áa]ny nap|milyen [ée]rt[ée]k)/i;
 var NUM_RX = /\d|\b(egy|k[ée]t|kett[őo]|h[áa]rom|n[ée]gy|[öo]t|hat|h[ée]t|nyolc|kilenc|t[íi]z|tizen|h[úu]sz|harminc|negyven|[öo]tven)\b/i;
 
-var CHAMBERS = [
-  { short:"MKIK (országos)",            full:"Magyar Kereskedelmi és Iparkamara" },
-  { short:"Bács-Kiskun VKIK",           full:"Bács-Kiskun Vármegyei Kereskedelmi és Iparkamara" },
-  { short:"Békés VKIK",                 full:"Békés Vármegyei Kereskedelmi és Iparkamara" },
-  { short:"Borsod-Abaúj-Zemplén VKIK",  full:"Borsod-Abaúj-Zemplén Vármegyei Kereskedelmi és Iparkamara" },
-  { short:"Budapesti KIK",              full:"Budapesti Kereskedelmi és Iparkamara" },
-  { short:"Csongrád-Csanádi KIK",       full:"Csongrád-Csanádi Kereskedelmi és Iparkamara" },
-  { short:"Dunaújvárosi KIK",           full:"Dunaújvárosi Kereskedelmi és Iparkamara" },
-  { short:"Fejér VKIK",                 full:"Fejér Vármegyei Kereskedelmi és Iparkamara" },
-  { short:"Győr-Moson-Sopron VKIK",     full:"Győr-Moson-Sopron Vármegyei Kereskedelmi és Iparkamara" },
-  { short:"Hajdú-Bihar VKIK",           full:"Hajdú-Bihar Vármegyei Kereskedelmi és Iparkamara" },
-  { short:"Heves VKIK",                 full:"Heves Vármegyei Kereskedelmi és Iparkamara" },
-  { short:"Jász-Nagykun-Szolnok VKIK",  full:"Jász-Nagykun-Szolnok Vármegyei Kereskedelmi és Iparkamara" },
-  { short:"Komárom-Esztergom VKIK",     full:"Komárom-Esztergom Vármegyei Kereskedelmi és Iparkamara" },
-  { short:"Nagykanizsai KIK",           full:"Nagykanizsai Kereskedelmi és Iparkamara" },
-  { short:"Nógrád VKIK",                full:"Nógrád Vármegyei Kereskedelmi és Iparkamara" },
-  { short:"Pest Vármegyei és Érdi KIK", full:"Pest Vármegyei és Érdi Kereskedelmi és Iparkamara" },
-  { short:"Pécs-Baranyai KIK",          full:"Pécs-Baranyai Kereskedelmi és Iparkamara" },
-  { short:"Somogyi KIK",                full:"Somogyi Kereskedelmi és Iparkamara" },
-  { short:"Sopron MJV KIK",             full:"Sopron Megyei Jogú Városi Kereskedelmi és Iparkamara" },
-  { short:"Szabolcs-Szatmár-Bereg VKIK",full:"Szabolcs-Szatmár-Bereg Vármegyei Kereskedelmi és Iparkamara" },
-  { short:"Tolna VKIK",                 full:"Tolna Vármegyei Kereskedelmi és Iparkamara" },
-  { short:"Vas VKIK",                   full:"Vas Vármegyei Kereskedelmi és Iparkamara" },
-  { short:"Veszprém VKIK",              full:"Veszprém Vármegyei Kereskedelmi és Iparkamara" },
-  { short:"Zala VKIK",                  full:"Zala Vármegyei Kereskedelmi és Iparkamara" }
-];
-
-var CATEGORIES = [
-  { key:"ugyrend",    title:"Ügyrend és SZMSZ" },
-  { key:"eljaras",    title:"Eljárásrendek" },
-  { key:"szabalyzat", title:"Belső szabályzatok" },
-  { key:"utasitas",   title:"Vezetői utasítások" },
-  { key:"korlevel",   title:"Körlevelek" },
-  { key:"zart",       title:"HR és pénzügy", restricted:true }
-];
-
 var VIEW_TITLES = {
-  ask:   ["Kamarai Tudástár",  "kamarai tudástár"],
-  docs:  ["Dokumentumok",      "dokumentumok"],
-  gaps:  ["Hiánylista",        "hiánylista"],
-  log:   ["Lekérdezési napló", "napló"],
-  cost:  ["Költségmodell",     "költség"],
-  admin: ["Adminisztráció",    "admin"]
+  ask:     ["Kamarai Tudástár", "kamarai tudástár"],
+  docs:    ["Dokumentumok",     "dokumentumok"],
+  gaps:    ["Hiánylista",       "hiánylista"],
+  log:     ["Előzmények",       "előzmények"],
+  cost:    ["Költségmodell",    "költség"],
+  account: ["Fiók",             "fiók"]
 };
 
 var PELDAK = [
@@ -120,6 +97,18 @@ function prefixMatch(a, b){
   var shorter = a.length <= b.length ? a : b;
   var longer  = a.length <= b.length ? b : a;
   return shorter.length >= 4 && longer.indexOf(shorter) === 0;
+}
+
+/* Képzett alakok: "igazolja" és "igazolás" közös töve hat betű, de egyik sem
+   előtagja a másiknak. Ezeket gyengébb súllyal vesszük figyelembe, hogy a
+   valódi találat meglegyen, de a véletlen egybeesés ("szabadság" / "szabadalom")
+   ne tudjon önmagában választ kiváltani. */
+var LOOSE_MIN = 6, LOOSE_W = 0.45;
+
+function commonPrefix(a, b){
+  var n = Math.min(a.length, b.length), i = 0;
+  while (i < n && a.charAt(i) === b.charAt(i)) i++;
+  return i;
 }
 
 /* Az igekötő leválasztása: "elfogadhatok" -> "fogadhatok",
@@ -199,14 +188,17 @@ function search(query){
     if (q.length < 3) continue;
     var forms = [q], alt = stripIgekoto(q);
     if (alt) forms.push(alt);
-    var cands = [];
+    var cands = [], loose = [];
     for (var v = 0; v < IDX.vocab.length; v++){
-      var term = IDX.vocab[v];
+      var term = IDX.vocab[v], strong = false, weak = false;
       for (var f = 0; f < forms.length; f++){
-        if (prefixMatch(forms[f], term)){ cands.push(term); break; }
+        if (prefixMatch(forms[f], term)){ strong = true; break; }
+        if (commonPrefix(forms[f], term) >= LOOSE_MIN) weak = true;
       }
+      if (strong) cands.push(term);
+      else if (weak) loose.push(term);
     }
-    groups.push({ q: q, cands: cands });
+    groups.push({ q: q, cands: cands, loose: loose });
   }
   if (!groups.length) return { hits: [], terms: uniq, amounts: amounts, coverage: 0, best: 0 };
 
@@ -219,6 +211,10 @@ function search(query){
       for (var c = 0; c < groups[g].cands.length; c++){
         var f2 = e.tf[groups[g].cands[c]];
         if (f2) sum += f2;
+      }
+      for (var w = 0; w < groups[g].loose.length; w++){
+        var f4 = e.tf[groups[g].loose[w]];
+        if (f4) sum += f4 * LOOSE_W;
       }
       tfs[n] = sum;
       if (sum) df++;
@@ -247,7 +243,11 @@ function search(query){
         }
       }
     }
-    if (score > 0 && qtyQuestion && NUM_RX.test(ent.c.t)) score += 1.4;
+    if (score > 0 && qtyQuestion){
+      /* a bekezdésjelölő "(3)" és a pontszám "4." nem számadat, csak sorszám */
+      var bare = ent.c.t.replace(/^\(\d+\)\s*/, "").replace(/^\d+\.\s*/, "");
+      if (NUM_RX.test(bare)) score += 2.2;
+    }
     if (score > 0) scored.push({ e: ent, score: score, matched: matched, idx: m });
   }
 
@@ -277,17 +277,13 @@ function hasCoverage(r){
 }
 
 /* ---------------------------------------------------------------- megjelenítés */
-function esc(s){
-  return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
 function highlight(text, terms){
   var out = esc(text);
   /* szótő-alapú kiemelés: a toldalékolt alakot is elkapja */
   for (var i = 0; i < terms.length; i++){
     var t = terms[i];
     if (t.length < 3) continue;
-    var base = t.length > 5 ? t.slice(0, Math.max(4, t.length - 3)) : t;
+    var base = t.length > 6 ? t.slice(0, Math.max(5, t.length - 4)) : t;
     var rx = new RegExp("(" + base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "[0-9a-záéíóöőúüű]*)", "gi");
     out = out.replace(rx, "<mark>$1</mark>");
   }
@@ -403,24 +399,18 @@ function openSource(chunkId){
 function closeSource(){ document.getElementById("ov").classList.remove("on"); }
 
 /* ---------------------------------------------------------------- napló, hiánylista */
-var LOG_KEY = "mkik_kb_log_v1";
-
-function loadLog(){
-  try { return JSON.parse(localStorage.getItem(LOG_KEY) || "[]"); }
-  catch (e) { return []; }
-}
-function saveLog(rows){
-  try { localStorage.setItem(LOG_KEY, JSON.stringify(rows.slice(-300))); } catch (e) {}
-}
 function logEvent(query, result, src){
+  var u = currentUser() || { id:"?", name:"?", role:"?" };
   var rows = loadLog();
   var now = new Date();
   rows.push({
     ts: now.toLocaleString("hu-HU", { month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" }),
+    iso: now.toISOString(),
     q: query,
     r: result,
-    u: document.getElementById("userName").textContent,
-    role: document.getElementById("userRole").textContent,
+    uid: u.id,
+    u: u.name,
+    role: u.role,
     ch: CHAMBERS[document.getElementById("chamber").selectedIndex].short,
     src: src ? (src.doc + " · " + src.page + ". o.") : null,
     cost: 0
@@ -428,12 +418,65 @@ function logEvent(query, result, src){
   saveLog(rows);
 }
 
+function filteredLog(){
+  var rows = loadLog();
+  var who  = document.getElementById("logWho").value;
+  var what = document.getElementById("logWhat").value;
+  var term = (document.getElementById("logSearch").value || "").trim().toLowerCase();
+  var out = [];
+  for (var i = 0; i < rows.length; i++){
+    var r = rows[i];
+    if (who && r.uid !== who) continue;
+    if (what && r.r !== what) continue;
+    if (term && r.q.toLowerCase().indexOf(term) < 0) continue;
+    out.push(r);
+  }
+  return out.reverse();
+}
+
+function buildLogFilter(){
+  var sel = document.getElementById("logWho");
+  if (sel.options.length) return;
+  var html = '<option value="">mind</option>';
+  for (var i = 0; i < USERS.length; i++){
+    html += '<option value="' + USERS[i].id + '">' + esc(USERS[i].name) + "</option>";
+  }
+  sel.innerHTML = html;
+  var re = function(){ renderLog(); };
+  sel.addEventListener("change", re);
+  document.getElementById("logWhat").addEventListener("change", re);
+  document.getElementById("logSearch").addEventListener("input", re);
+  document.getElementById("logExport").addEventListener("click", exportLog);
+}
+
+function exportLog(){
+  var rows = filteredLog();
+  if (!rows.length){ toast("Nincs exportálható bejegyzés."); return; }
+  var head = ["idopont","munkatars","szerepkor","kamara","kerdes","eredmeny","forras","koltseg_ft"];
+  var lines = [head.join(";")];
+  for (var i = 0; i < rows.length; i++){
+    var r = rows[i];
+    lines.push([r.ts, r.u, r.role, r.ch, r.q,
+                r.r === "ok" ? "megvalaszolva" : "nincs fedezet",
+                r.src || "", "0"]
+      .map(function(x){ return '"' + String(x).replace(/"/g, '""') + '"'; }).join(";"));
+  }
+  var blob = new Blob(["\ufeff" + lines.join("\n")], { type:"text/csv;charset=utf-8" });
+  var url = URL.createObjectURL(blob);
+  var a2 = document.createElement("a");
+  a2.href = url; a2.download = "kamarai-tudastar-elozmenyek.csv";
+  document.body.appendChild(a2); a2.click(); document.body.removeChild(a2);
+  URL.revokeObjectURL(url);
+  toast(rows.length + " bejegyzés exportálva.");
+}
+
 function renderLog(){
-  var rows = loadLog().slice().reverse();
+  buildLogFilter();
+  var rows = filteredLog();
   var el = document.getElementById("logBody");
   if (!rows.length){
-    el.innerHTML = emptyState("fa-regular fa-rectangle-list", "A napló üres",
-      "Az első lekérdezés után itt jelennek meg a bejegyzések.");
+    el.innerHTML = emptyState("fa-regular fa-rectangle-list", "Nincs megjeleníthető bejegyzés",
+      "Tegyél fel egy kérdést, vagy lazíts a szűrőkön.");
     return;
   }
   var h = '<table><thead><tr><th>Időpont</th><th>Kérdés</th><th>Munkatárs</th><th>Kamara</th>' +
@@ -561,7 +604,12 @@ function buildChambers(){
     html += '<option value="' + i + '">' + CHAMBERS[i].short + "</option>";
   }
   sel.innerHTML = html;
-  sel.addEventListener("change", function(){ showChamberFull(); refreshSidebar(); });
+  sel.selectedIndex = currentChamber();
+  sel.addEventListener("change", function(){
+    setChamber(sel.selectedIndex);
+    showChamberFull();
+    refreshSidebar();
+  });
   showChamberFull();
 }
 
@@ -575,21 +623,29 @@ function buildAccordion(){
   var wrap = document.getElementById("acc"), html = "";
   var chIdx = document.getElementById("chamber").selectedIndex;
 
+  var me = currentUser() || { circles:["all"] };
   for (var i = 0; i < CATEGORIES.length; i++){
     var c = CATEGORIES[i], lis = "", n = 0;
+    var allowed = !c.restricted ||
+      me.circles.indexOf("hr") >= 0 || me.circles.indexOf("penzugy") >= 0;
     for (var j = 0; j < docs.length; j++){
       var d = docs[j];
       if (d.category !== c.key || d.chamber !== chIdx) continue;
       n++;
       lis += '<li><span>' + esc(d.title) + '</span><span class="cnt">' + d.pages + " o.</span></li>";
     }
-    if (!n) lis = '<li><span class="muted">Ehhez a kamarához még nincs feltöltve dokumentum.</span></li>';
+    if (!allowed){
+      lis = '<li><span class="muted">Ehhez a körhöz nincs hozzáférésed. Van rá szabályzat, a tartalma viszont nem jelenik meg.</span></li>';
+      n = 0;
+    } else if (!n){
+      lis = '<li><span class="muted">Ehhez a kamarához még nincs feltöltve dokumentum.</span></li>';
+    }
     html +=
       '<div class="acc-item" data-key="' + c.key + '">' +
         '<button class="acc-head" type="button" aria-expanded="false">' +
           "<span>" + c.title + "</span>" +
           (c.restricted ? '<i class="fa-solid fa-lock lock" title="Korlátozott hozzáférési kör"></i>' : "") +
-          '<span class="badge">' + n + "</span>" +
+          '<span class="badge">' + (allowed ? n : '<i class="fa-solid fa-lock"></i>') + "</span>" +
           '<i class="fa-solid fa-chevron-down" aria-hidden="true"></i>' +
         "</button>" +
         '<div class="acc-body"><ul>' + lis + "</ul></div>" +
@@ -669,6 +725,7 @@ function showView(name){
   if (name === "gaps") renderGaps();
   if (name === "docs") renderDocs();
   if (name === "cost") renderCost();
+  if (name === "account") renderAccount();
   window.scrollTo(0, 0);
 }
 
@@ -705,15 +762,156 @@ function reflectConfig(){
   document.getElementById("askBtn").disabled = !(window.KB && window.KB.chunks && window.KB.chunks.length);
 }
 
+function renderAccount(){
+  var u = currentUser();
+  if (!u) return;
+  document.getElementById("acctAv").textContent = initials(u.name);
+  document.getElementById("acctName").textContent = u.name;
+  document.getElementById("acctMail").textContent = u.email;
+  document.getElementById("acctName2").textContent = u.name;
+  document.getElementById("acctRole").textContent = getLang() === "en" ? u.roleEn : u.role;
+  document.getElementById("acctChamber").textContent = CHAMBERS[currentChamber()].short;
+  var since = "-";
+  try {
+    var ses = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+    if (ses) since = new Date(ses.at).toLocaleString("hu-HU", { month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+  } catch (e) {}
+  document.getElementById("acctSince").textContent = since;
+
+  var circles = [
+    { k:"all",     n:"Általános belső dokumentumok" },
+    { k:"hr",      n:"HR-dokumentumok" },
+    { k:"penzugy", n:"Pénzügyi dokumentumok" },
+    { k:"vezetoi", n:"Vezetői dokumentumok" }
+  ];
+  var ch = "";
+  for (var i = 0; i < circles.length; i++){
+    var has = u.circles.indexOf(circles[i].k) >= 0;
+    ch += '<div class="circle"><i class="fa-solid ' +
+          (has ? "fa-circle-check yes" : "fa-lock no") + '"></i><span>' + circles[i].n +
+          '</span><b style="margin-left:auto">' + (has ? "van" : "nincs") + "</b></div>";
+  }
+  document.getElementById("acctCircles").innerHTML = ch;
+
+  var mine = loadLog().filter(function(r){ return r.uid === u.id; });
+  var no = mine.filter(function(r){ return r.r === "nocov"; }).length;
+  document.getElementById("acctQ").textContent = mine.length;
+  document.getElementById("acctN").textContent = no;
+  document.getElementById("acctLast").textContent = mine.length ? mine[mine.length - 1].ts : "-";
+
+  syncSegments();
+}
+
+function syncSegments(){
+  var th = getTheme(), lg = getLang(), fs = getFontStep();
+  var set = function(id, attr, val){
+    var wrap = document.getElementById(id);
+    if (!wrap) return;
+    var bs = wrap.querySelectorAll("button");
+    for (var i = 0; i < bs.length; i++){
+      bs[i].classList.toggle("on", bs[i].getAttribute(attr) === String(val));
+    }
+  };
+  set("segTheme", "data-theme", th);
+  set("segLang", "data-lang", lg);
+  set("segFont", "data-font", fs);
+}
+
+function bindChrome(){
+  document.getElementById("themeBtn").addEventListener("click", function(){
+    toggleTheme(); syncSegments();
+    toast(getTheme() === "dark" ? "Sötét mód bekapcsolva." : "Világos mód bekapcsolva.");
+  });
+  document.getElementById("fontBtn").addEventListener("click", function(){
+    cycleFont(); syncSegments();
+    toast("Betűméret: " + FONT_STEPS[getFontStep()] + "%");
+  });
+  document.getElementById("langPill").addEventListener("click", function(){
+    setLang(getLang() === "hu" ? "en" : "hu");
+    applyLang(); buildSamples(); syncSegments();
+    toast(getLang() === "hu" ? "Nyelv: magyar" : "Language: English");
+  });
+  document.getElementById("userChip").addEventListener("click", function(){ showView("account"); });
+  document.getElementById("logoutBtn").addEventListener("click", function(){
+    logout(); window.location.reload();
+  });
+  document.getElementById("acctClear").addEventListener("click", function(){
+    var u = currentUser();
+    var rows = loadLog().filter(function(r){ return r.uid !== u.id; });
+    saveLog(rows);
+    renderAccount();
+    toast("A saját előzményeid törölve.");
+  });
+
+  var seg = function(id, attr, fn){
+    var wrap = document.getElementById(id);
+    var bs = wrap.querySelectorAll("button");
+    for (var i = 0; i < bs.length; i++){
+      bs[i].addEventListener("click", function(){ fn(this.getAttribute(attr)); syncSegments(); });
+    }
+  };
+  seg("segTheme", "data-theme", function(v){ applyTheme(v); });
+  seg("segLang", "data-lang", function(v){ setLang(v); applyLang(); buildSamples(); renderAccount(); });
+  seg("segFont", "data-font", function(v){ applyFontStep(parseInt(v, 10)); });
+}
+
+function showUser(){
+  var u = currentUser();
+  if (!u) return;
+  document.getElementById("userInitials").textContent = initials(u.name);
+  document.getElementById("userName").textContent = u.name;
+  document.getElementById("userRole").textContent = getLang() === "en" ? u.roleEn : u.role;
+}
+
+/* ---------------------------------------------------------------- belépés */
+function bindLogin(){
+  var form = document.getElementById("loginForm");
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    var r = login(document.getElementById("lgEmail").value, document.getElementById("lgPass").value);
+    if (!r.ok){ document.getElementById("lgErr").textContent = r.why; return; }
+    window.location.reload();
+  });
+  var rows = document.querySelectorAll(".demorow");
+  for (var i = 0; i < rows.length; i++){
+    rows[i].addEventListener("click", function(){
+      document.getElementById("lgEmail").value = this.getAttribute("data-em");
+      document.getElementById("lgPass").value = DEMO_PASSWORD;
+      document.getElementById("lgPass").focus();
+    });
+  }
+}
+
 /* Az init hoistolt függvénydeklaráció, és a szkript legvégén hívjuk meg,
    amikor minden fenti deklaráció már inicializált. */
 function init(){
+  initChrome();
+  loadSettings();
+  if (!currentUser()){
+    document.getElementById("loginWrap").hidden = false;
+    document.getElementById("app").hidden = true;
+    bindLogin();
+    return;
+  }
+  document.getElementById("loginWrap").hidden = true;
+  document.getElementById("app").hidden = false;
+
   buildIndex();
   buildChambers();
+  showUser();
   refreshSidebar();
   buildSamples();
   bindNav();
+  bindChrome();
   reflectConfig();
+  applyLang();
+  renderAnswerPlaceholder();
+}
+
+function renderAnswerPlaceholder(){
+  document.getElementById("ans").innerHTML = emptyState("fa-regular fa-file-lines",
+    "Tegyél fel egy kérdést",
+    "A rendszer csak a betöltött szabályzatokból válaszol. Ha nincs fedezet, azt mondja meg.");
 }
 
 init();

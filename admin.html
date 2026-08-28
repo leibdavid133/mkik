@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="hu" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adminisztráció - Kamarai Tudástár</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="assets/mkik-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Roboto+Condensed:wght@400;700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+.adminbar{background:var(--mkik-green); color:#fff}
+[data-theme="dark"] .adminbar{background:#1B3B2E}
+.adminbar .container{display:flex; align-items:center; gap:16px; height:56px}
+.adminbar .mark{display:flex; align-items:center; gap:10px; font-family:var(--slab); font-weight:700}
+.adminbar .mark i{opacity:.85}
+.adminbar .tagx{font-family:var(--cond); font-size:.72rem; text-transform:uppercase; letter-spacing:.7px;
+  background:rgba(255,255,255,.2); padding:3px 9px}
+.adminbar a.back{margin-left:auto; color:#fff; font-family:var(--cond); font-size:.83rem; text-transform:uppercase}
+.adminbar button.out{color:#fff; font-family:var(--cond); font-size:.83rem; text-transform:uppercase;
+  border:1px solid rgba(255,255,255,.4); padding:6px 12px}
+.adminnav{background:var(--surface); border-bottom:1px solid var(--line)}
+.adminnav .container{display:flex; gap:2px; overflow-x:auto}
+.adminnav a{font-family:var(--cond); text-transform:uppercase; font-size:.84rem; color:var(--ink-soft);
+  padding:14px 15px; border-bottom:2px solid transparent; white-space:nowrap}
+.adminnav a:hover{color:var(--mkik-green); text-decoration:none}
+.adminnav a.on{color:var(--mkik-green); font-weight:700; border-bottom-color:var(--mkik-green)}
+.apage{padding:26px 0 60px}
+.ahead{display:flex; align-items:flex-end; gap:16px; margin-bottom:18px; flex-wrap:wrap}
+.ahead h2{font-size:1.5rem}
+.ahead p{margin:4px 0 0; color:var(--ink-soft); font-size:.83rem; max-width:70ch}
+.ahead .btn{margin-left:auto}
+.stats4{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px}
+@media (max-width:820px){.stats4{grid-template-columns:1fr 1fr}}
+.frm{display:grid; grid-template-columns:1fr 1fr; gap:14px 18px}
+@media (max-width:700px){.frm{grid-template-columns:1fr}}
+.frm label{display:block; font-family:var(--cond); text-transform:uppercase; font-size:.72rem;
+  letter-spacing:.6px; color:var(--ink-soft); margin-bottom:5px}
+.frm input,.frm select{width:100%; height:40px; padding:0 11px; border:1px solid var(--line);
+  background:var(--bg); border-radius:2px}
+.frm input:focus,.frm select:focus{outline:2px solid var(--mkik-green); outline-offset:-1px}
+.frm .wide{grid-column:1 / -1}
+.rowbtn{display:flex; gap:8px; align-items:center}
+.iconbtn{border:1px solid var(--line); background:var(--surface); padding:5px 9px; font-size:.78rem; color:var(--ink-soft)}
+.iconbtn:hover{border-color:var(--mkik-green); color:var(--mkik-green)}
+.iconbtn.danger:hover{border-color:var(--mkik-red); color:var(--mkik-red)}
+.drop{border:2px dashed var(--line); background:var(--bg-soft-2); padding:26px; text-align:center; margin-bottom:16px}
+.drop.on{border-color:var(--mkik-green); background:rgba(93,180,124,.08)}
+.drop i{font-size:1.5rem; color:var(--ink-faint); display:block; margin-bottom:9px}
+.drop b{display:block; font-family:var(--slab); font-size:.95rem; margin-bottom:5px}
+.drop span{font-size:.8rem; color:var(--ink-faint)}
+.queue{margin-top:14px}
+.qrow{display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid var(--line);
+  background:var(--surface); margin-bottom:6px; font-size:.83rem}
+.qrow .nm{font-weight:600}
+.qrow .st{margin-left:auto}
+</style>
+</head>
+<body>
+
+<div class="loginwrap" id="loginWrap">
+  <div class="logincard">
+    <img class="loginlogo" src="assets/mkik-logo.png" alt="Magyar Kereskedelmi és Iparkamara">
+    <h1>Adminisztráció</h1>
+    <p class="loginlead">Korlátozott felület. Belépés csak rendszergazdai jogosultsággal.</p>
+    <form id="loginForm">
+      <label for="lgEmail">E-mail cím</label>
+      <input id="lgEmail" type="email" placeholder="admin@mkik.hu" autocomplete="username" required>
+      <label for="lgPass">Jelszó</label>
+      <input id="lgPass" type="password" autocomplete="current-password" required>
+      <div class="lgerr" id="lgErr"></div>
+      <button class="btn btn-primary btn-block" type="submit">Belépés</button>
+    </form>
+    <div class="logindemo">
+      <b>Bemutató fiók</b>
+      <button class="demorow" data-em="admin@mkik.hu"><span>Rendszergazda</span><em>admin@mkik.hu</em></button>
+      <div class="lgnote">Jelszó: <code>kamara2026</code>. Éles rendszerben az admin belépés kötelezően kétlépcsős, és a jogosultságot a kamara címtára adja.</div>
+    </div>
+    <a class="lgadmin" href="index.html">Vissza a tudástárhoz</a>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <div class="adminbar">
+    <div class="container">
+      <span class="mark"><i class="fa-solid fa-sliders"></i> Kamarai Tudástár</span>
+      <span class="tagx">Adminisztráció</span>
+      <a class="back" href="index.html"><i class="fa-solid fa-arrow-left"></i> Tudástár</a>
+      <button class="out" id="logoutBtn">Kijelentkezés</button>
+    </div>
+  </div>
+
+  <div class="adminnav">
+    <div class="container">
+      <a href="#" class="on" data-view="dash">Áttekintés</a>
+      <a href="#" data-view="docs">Dokumentumok</a>
+      <a href="#" data-view="chambers">Kamarák</a>
+      <a href="#" data-view="users">Felhasználók</a>
+      <a href="#" data-view="audit">Napló</a>
+      <a href="#" data-view="settings">Beállítások</a>
+    </div>
+  </div>
+
+  <div class="container apage">
+
+    <section class="view active" id="v-dash">
+      <div class="ahead"><div><h2>Áttekintés</h2>
+        <p>A rendszer állapota minden kamarára kiterjedően. Az adminisztrátor minden kamara dokumentumállományához hozzáfér.</p></div></div>
+      <div class="stats4">
+        <div class="statcard"><div class="big" id="dChambers">0</div><div class="sub">kamara a rendszerben</div></div>
+        <div class="statcard"><div class="big" id="dDocs">0</div><div class="sub">betöltött dokumentum</div></div>
+        <div class="statcard"><div class="big" id="dChunks">0</div><div class="sub">indexelt szövegrész</div></div>
+        <div class="statcard"><div class="big" id="dGap">0%</div><div class="sub">fedezet nélküli kérdés</div></div>
+      </div>
+      <div class="ahead"><div><h2 style="font-size:1.19rem">Szabályozási hiányok</h2>
+        <p>A leggyakoribb megválaszolatlan kérdések. Ez a lista mutatja meg, hol érdemes a belső szabályozást kiegészíteni.</p></div></div>
+      <div class="tablewrap" id="dGaps"></div>
+    </section>
+
+    <section class="view" id="v-docs">
+      <div class="ahead"><div><h2>Dokumentumok</h2>
+        <p>Feltöltés, kamarához rendelés, hozzáférési kör és verziózás. A dokumentumállomány cseréje nem igényel fejlesztői közreműködést.</p></div></div>
+      <div class="drop" id="drop">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+        <b>Szabályzat feltöltése</b>
+        <span>Húzd ide a PDF-et, vagy kattints a tallózáshoz. A feltöltött fájl indexelési sorba kerül.</span>
+        <input type="file" id="file" accept="application/pdf" multiple hidden>
+      </div>
+      <div class="queue" id="queue"></div>
+      <div class="tablewrap" id="aDocs"></div>
+    </section>
+
+    <section class="view" id="v-chambers">
+      <div class="ahead"><div><h2>Kamarák</h2>
+        <p>Mind a 24 kamara külön dokumentumállománnyal és külön hozzáféréssel. Egy kamara kikapcsolása azonnal elzárja a saját anyagát.</p></div></div>
+      <div class="tablewrap" id="aChambers"></div>
+    </section>
+
+    <section class="view" id="v-users">
+      <div class="ahead"><div><h2>Felhasználók</h2>
+        <p>Szerepkör és hozzáférési kör kamaránként. A körön kívüli dokumentum tartalma nem jelenik meg, és válasz sem hivatkozhat rá.</p></div></div>
+      <div class="tablewrap" id="aUsers"></div>
+      <div class="note">Éles rendszerben a felhasználókat a kamara SSO-címtára hitelesíti; itt a szerepkör- és jogosultság-hozzárendelés kezelhető.</div>
+    </section>
+
+    <section class="view" id="v-audit">
+      <div class="ahead"><div><h2>Napló</h2>
+        <p>Teljes lekérdezési előzmény minden munkatársra. Visszakereshető, ki mikor milyen forrásra hivatkozva adott ki választ a kamara nevében.</p></div>
+        <button class="btn btn-ghost" id="aExport"><i class="fa-solid fa-download"></i> CSV export</button></div>
+      <div class="logfilter">
+        <label for="aWho">Munkatárs</label>
+        <select id="aWho"></select>
+        <label for="aWhat">Eredmény</label>
+        <select id="aWhat"><option value="">mind</option><option value="ok">megválaszolva</option><option value="nocov">nincs fedezet</option></select>
+        <input id="aSearch" type="search" placeholder="Keresés a kérdésekben">
+        <button class="btn btn-ghost" id="aClear"><i class="fa-regular fa-trash-can"></i> Napló ürítése</button>
+      </div>
+      <div class="tablewrap" id="aAudit"></div>
+    </section>
+
+    <section class="view" id="v-settings">
+      <div class="ahead"><div><h2>Beállítások</h2>
+        <p>A fedezet-küszöb dönti el, mikor válaszol a rendszer és mikor mondja azt, hogy nincs fedezet. Szigorúbb küszöb kevesebb, de biztosabb választ ad.</p></div></div>
+      <div class="calc" style="margin-bottom:16px">
+        <div class="calcfield"><label for="sScore">Fedezet-küszöb (pontszám)</label><input id="sScore" type="number" step="0.1" min="0"></div>
+        <div class="calcfield"><label for="sCov">Elvárt szó-lefedettség (0-1)</label><input id="sCov" type="number" step="0.05" min="0" max="1"></div>
+        <div class="calcfield"><label for="sTerms">Minimális érdemi szó a kérdésben</label><input id="sTerms" type="number" step="1" min="1"></div>
+      </div>
+      <div class="ahead"><div><h2 style="font-size:1.19rem">Csatlakozási pontok</h2>
+        <p>A megfogalmazó réteg és a hangasszisztens itt köthető be. Üresen hagyva a rendszer idézetes módban fut, nyelvi modell nélkül, nulla kérdésenkénti költséggel.</p></div></div>
+      <div class="calc">
+        <div class="frm">
+          <div class="wide"><label for="sLlm">Nyelvi modell végpont (LLM_ENDPOINT)</label><input id="sLlm" type="url" placeholder="https://..."></div>
+          <div class="wide"><label for="sVoice">Hangasszisztens végpont (VOICE_ENDPOINT)</label><input id="sVoice" type="url" placeholder="https://..."></div>
+        </div>
+        <div class="rowbtn" style="margin-top:16px">
+          <button class="btn btn-primary" id="sSave">Mentés</button>
+          <button class="btn btn-ghost" id="sReset">Alaphelyzet</button>
+        </div>
+      </div>
+      <div class="note">Adatkezelés: a rendszer a kérdést, a szerepkört és a kiadott forrást naplózza. Személyes adat a dokumentumokból nem kerül a naplóba. A napló a kamara saját tárhelyén marad, harmadik félhez nem kerül, és nem használható modell tanítására.</div>
+    </section>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="common.js"></script>
+<script src="data/kb.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
