@@ -20,10 +20,20 @@
 
    A dokumentum-leltárban minden szabályzat "all" hozzáférésű, így a meglévő
    jogosultság-szűrés sosem lépne életbe. Egy dokumentumot korlátozott körbe
-   teszünk, hogy a működés bemutatható legyen. A build_index.py MANIFEST-je a
-   végleges hely; ez itt a demó-kapcsoló. */
+   teszünk, hogy a működés bemutatható legyen.
+
+   Miért az Adatkezelési Szabályzat: a négy dokumentum közül az MKIK (0-s
+   kamara) alatt csak ez és a Beszerzési Szabályzat áll - utóbbi a fő bemutató
+   anyag, annak nyitva kell maradnia. Az Adatkezelési a személyes adatok
+   kezeléséről szól, ezért a HR-kör életszerű korlátozás.
+
+   A bemutató így néz ki: ugyanaz a kérdés Kovács Annától (ügyintéző) elutasítást
+   kap, Szabó Judittól (HR vezető) választ ad.
+
+   Az Admin felület hozzáférési kör oszlopa ezt felülírja és el is menti, tehát
+   ez csak a kiindulási állapot. Kikapcsolás: az alábbi objektum kiürítése. */
 var ACCESS_OVERRIDE = {
-  "itbsz-2026-01": "vezetoi"   /* IT Biztonsági Szabályzat - csak vezetői kör */
+  "aksz-2026-01": "hr"   /* Adatkezelési Szabályzat - HR-kör */
 };
 
 (function applyAccessOverride(){
