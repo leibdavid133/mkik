@@ -8,13 +8,18 @@
    a szolgáltatói kulcs a Supabase környezetében marad.
    ============================================================================ */
 
+/* A végpont a deploy után áll be. Amíg nincs élesítve, a backend KIKAPCSOLVA
+   indul: a korábbi projekt-hivatkozás (yrddksgtictcpkqnguko) DNS-szinten már
+   nem létezik, és egy halott végpontra küldött kérés minden fedezetlen
+   kérdésnél hibaüzenetet villantana fel a bemutatón.
+
+   Élesítés a deploy után egyetlen hívással:  backendEnable("<uj-project-ref>")
+   vagy az Adminban: Beállítások -> Közös napló és értesítések.
+   Ellenőrizd deploy előtt, hogy a ref létezik:  host <ref>.supabase.co */
 var BACKEND = {
-  url:     "https://yrddksgtictcpkqnguko.supabase.co/functions/v1",
+  url:     "",
   timeout: 2500,
-  /* Bekapcsolva, mert a beszélgetés-értesítő e-mail ezen keresztül megy ki.
-     Az adminban egy kattintással kikapcsolható - kikapcsolva semmi nem hagyja
-     el a gépet, és a rendszer minden más funkciója változatlanul működik. */
-  on:      true
+  on:      false
 };
 
 var BACKEND_KEY = "mkik_backend_v1";
@@ -35,6 +40,12 @@ function backendSet(patch){
 }
 
 function backendOn(){ return BACKEND.on && !!BACKEND.url; }
+
+/* Egy lépésben élesíti a backendet a deploy után. */
+function backendEnable(projectRef){
+  backendSet({ url: "https://" + projectRef + ".supabase.co/functions/v1", on: true });
+  return BACKEND.url;
+}
 
 /* Egyetlen POST. Sosem dob: hiba esetén cb(hibaszöveg, null). */
 function backendPost(fn, payload, cb){
